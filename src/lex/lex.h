@@ -10,6 +10,7 @@
 
 typedef bool (*LexemaCondition)(char);
 
+void advance_next_char(char *, size_t *, size_t *, size_t *);
 Token *make_tokens(const char[]);
 char *make_lexema(const char[], size_t *, LexemaCondition);
 bool is_number(char);

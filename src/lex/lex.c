@@ -3,6 +3,9 @@
 Token *make_tokens(const char value[])
 {
     size_t current = 0;
+    size_t column = -1;
+    size_t row = -1;
+
     char c = value[current];
     int index_tokens = 0;
     Token *tokens = NULL;
@@ -14,7 +17,7 @@ Token *make_tokens(const char value[])
 
         if (strchr(" \t", c))
         {
-            current++;
+            advance_next_char(value, &row, &column, &current);
         }
         else if (is_number(c))
         {
@@ -35,17 +38,17 @@ Token *make_tokens(const char value[])
         {
             lexema = malloc(2 * sizeof(char));
             sprintf(lexema, "%c", c);
-            current++;
+            advance_next_char(value, &row, &column, &current);
         }
         else if (is_paren_or_bracket(c))
         {
             lexema = malloc(2 * sizeof(char));
             sprintf(lexema, "%c", c);
-            current++;
+            advance_next_char(value, &row, &column, &current);
         }
         else
         {
-            current++;
+            advance_next_char(value, &row, &column, &current);
         }
 
         if (lexema)
@@ -61,6 +64,16 @@ Token *make_tokens(const char value[])
     tokens = push_token(create_token(NULL, E0F), tokens, &index_tokens);
 
     return tokens;
+}
+
+void advance_next_char(char *s, size_t *row, size_t *column, size_t *index) {
+    (*index) += 1;
+    (*column) += 1;
+
+    if (s[*index] == '\n') {
+        (*row) += 1;
+        (*column) = 0;
+    }
 }
 
 char *make_lexema(const char value[], size_t *index, LexemaCondition cond)
