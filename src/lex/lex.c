@@ -19,6 +19,11 @@ Token *make_tokens(const char value[])
         {
             advance_next_char(value, &row, &column, &current);
         }
+        else if (is_end_of_statement(c)) {
+            lexema = malloc(2 * sizeof(char));
+            sprintf(lexema, "%c", c);
+            advance_next_char(value, &row, &column, &current);
+        }
         else if (is_number(c))
         {
             lexema = make_lexema(value, &current, is_number);
@@ -34,13 +39,18 @@ Token *make_tokens(const char value[])
             lexema = make_lexema(value, &current, is_character_of_str);
             type = STRING;
         }
-        else if (is_operator(c))
+        else if (is_arith_operator(c))
         {
             lexema = malloc(2 * sizeof(char));
             sprintf(lexema, "%c", c);
             advance_next_char(value, &row, &column, &current);
         }
-        else if (is_paren_or_bracket(c))
+        else if (is_bool_operator(c, value[current+1]))
+        {
+            lexema = make_bool_operator(value, &current);
+            type = NULL;
+        }
+        else if (is_symbol(c))
         {
             lexema = malloc(2 * sizeof(char));
             sprintf(lexema, "%c", c);
@@ -92,6 +102,25 @@ char *make_lexema(const char value[], size_t *index, LexemaCondition cond)
     return substring(value, start, (*index - 1));
 }
 
+char *make_bool_operator(const char value[], size_t *index) {
+    const size_t start = *index;
+    size_t i;
+    
+    for (i = 0; BOOL_OPERATORS[i]; i++) {
+        if (BOOL_OPERATORS[i][0] == value[*index] 
+            && BOOL_OPERATORS[i][1] == value[(*index)++]) {
+            (*index)+=1;
+            break;
+        }
+    }
+    
+    return substring(value, start, (*index-1));
+}
+
+bool is_end_of_statement(char c) {
+    return strchr(END_OF_STATEMENT, c) != NULL;
+}
+
 bool is_identifier(char c)
 {
     return strchr(LETTERS_DIGITS, c) || c == '_';
@@ -112,18 +141,37 @@ bool is_string(char c)
     return strchr(QUOTES, c) != NULL;
 }
 
-bool is_operator(char c)
+bool is_arith_operator(char c)
 {
     size_t i;
-    for (i = 0; OPERATORS[i]; i++)
-        if (strchr(OPERATORS[i], c))
+    for (i = 0; ARITH_OPERATORS[i]; i++)
+        if (strchr(ARITH_OPERATORS[i], c))
             return 1;
 
     return 0;
 }
 
-bool is_paren_or_bracket(char c)
+bool is_bool_operator(char c, char next)
 {
-    return c == LPAR[0] || c == RPAR[0] || c == RSQUARE[0] || c == LSQUARE[0];
+    size_t i;
+
+    if (c == ASSIGN[0] && next != ASSIGN[0])
+        return 0;
+
+    for (i = 0; BOOL_OPERATORS[i]; i++)
+        if (BOOL_OPERATORS[i][0] == c)
+            return 1;
+
+    return 0;
+}
+
+bool is_symbol(char c)
+{
+    size_t i;
+    for (i = 0; SYMBOLS[i]; i++)
+        if (strchr(SYMBOLS[i], c))
+            return 1;
+
+    return 0;
 }
 

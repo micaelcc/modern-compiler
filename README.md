@@ -4,20 +4,62 @@ Modern Compiler Implementation in C
 ## Grammar
 
 ```md
-<expr>               ::= <term> ((MINUS | PLUS) <term>)* ; | <assign_expr>
-<assign_expr>        ::= [DEF_VAR] ID ASSIGN <expr> 
-<term>               ::= <factor> ((MUL | DIV) <factor>)*
-<factor>             ::= (PLUS | MINUS)* <factor>
-<factor>             ::= <pow> | <atom>
-<pow>                ::= [LPAR] <expr> [RPAR] ** [LPAR] <expr> [RPAR] 
-<atom>               ::= INT | FLOAT | STRING | ID | LPAR <expr> RPAR
-<expr_bool>          ::= NOT <expr_bool> | <expr_bool> <op_bool> (<expr_bool>)* | <atom>
-<op_bool>            ::= LT | GT | LE | GE | NE | EQ | AND | OR
-<while_statement>    ::= WHILE LPAR <expr_bool> RPAR <compound_statement>
-<if_statement>       ::= IF LPAR <expr_bool> RPAR <compound_statement> (<else_statement>)*
-<else_statement>     ::= ELSE (<if_statement> | <compound_statement>)
-<compound_statement> ::= LBRACE { <statement> }* RBRACE
-<statement>          ::= <expr> | <if_statement> | <while_statement>
+# Syntactic Grammar
+
+<program>            ::= <statement>*
+<statement>          ::= <expr> 
+                       | <if_statement> 
+                       | <while_statement>
+<compound_statement> ::= "{" <statement>* "}"
+
+<expr>               ::= <assign_expr> 
+                       | <arith_expr> 
+<arith_expr>         ::= <term> (("-" | "+") <term>)*
+<assign_expr>        ::= ("let" <space>)? <identifier> "=" <expr> ";"
+<term>               ::= <factor> (("*" | "/") <factor>)*
+<factor>             ::= ("+" | "-")* (<pow> | <atom>)
+<priority_factor>    ::= "(" <arith_expr> ")" | <pow> | <atom>
+<pow>                ::= <priority_factor> "^" <priority_factor>               
+<atom>               ::= <digit>+ 
+                       | <identifier> 
+                       | <string> 
+                       | "(" <expr> ")"
+
+<expr_bool>          ::= <expr_bool_or> 
+                       | "(" <expr_bool_or> ")"
+<expr_bool_or>       ::= <expr_bool_and> (<space> "||" <space> <expr_bool_and>)*
+<expr_bool_and>      ::= <expr_bool_not> (<space> "&&" <space> <expr_bool_not>)*
+<expr_bool_not>      ::= "!" <expr_bool_not> 
+                       | <expr_bool_rel>
+                       | "(" <expr_bool> ")"
+<expr_bool_rel>      ::= <arith_expr> <op_bool> <arith_expr> 
+                       | <atom>
+<op_bool>            ::= "<" 
+                       | ">" 
+                       | "<=" 
+                       | ">=" 
+                       | "!=" 
+                       | "==" 
+                       | "&&" 
+                       | "||"
+
+<while_statement>    ::= "while" "(" <expr_bool> ")" <compound_statement>
+
+<if_statement>       ::= "if" "(" <expr_bool> ")" <compound_statement> (<else_statement>)*
+
+<else_statement>     ::= "else" (<if_statement> | <compound_statement>)
+
+<identifier>         ::= <letter> <letter_or_digit>*
+<string>             ::= <quote> (<letter_or_digit> | "_" | " ")+ <quote>
+<letter>             ::= [a-z] 
+                       | [A-Z] 
+                       | "_"
+<letter_or_digit>    ::= <letter> 
+                       | <digit>
+<digit>              ::= [0-9]
+<space>              ::= " "
+<new_line>           ::= "\n"
+<quote>              ::= "\""
 ```
 
 ### Constants

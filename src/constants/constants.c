@@ -4,6 +4,7 @@ const char IF[] = "if";
 const char DEF_VAR[] = "let";
 const char WHILE[] = "while";
 const char FOR[] = "for";
+const char ELSE[] = "else";
 
 const char DIGITS[] = "0123456789";
 const char LETTERS[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -26,24 +27,57 @@ const char LPAR[] = "(";
 const char RPAR[] = ")";
 const char LSQUARE[] = "[";
 const char RSQUARE[] = "]";
-const char EQ[] = "=";
+const char RBRACE[] = "{";
+const char LBRACE[] = "}";
+const char EQ[] = "==";
+const char ASSIGN[] = "=";
 const char POW[] = "^";
 const char QUOTES[] = "\"";
+const char LT[] = "<";
+const char GT[] = ">";
+const char LE[] = "<=";
+const char GE[] = ">=";
+const char NE[] = "!=";
+const char AND[] = "&&";
+const char OR[] = "||";
 
 const char *KEYWORDS[] = {
     DEF_VAR,
     IF,
+    ELSE,
     WHILE,
     FOR,
+    AND,
+    OR,
     NULL};
 
-const char *OPERATORS[] = {
+const char *ARITH_OPERATORS[] = {
     PLUS,
     MINUS,
-    EQ,
     POW,
-    LPAR,
-    RPAR,
     DIV,
     MUL,
     NULL};
+
+const char *SYMBOLS[] = {
+    ASSIGN,
+    LPAR,
+    RPAR,
+    RBRACE,
+    LBRACE,
+    NULL
+};
+
+const char *BOOL_OPERATORS[] = {
+    LT,
+    GT,
+    LE,
+    GE,
+    NE,
+    AND,
+    OR,
+    EQ,
+    NULL
+};
+
+const char END_OF_STATEMENT[] = ";";
