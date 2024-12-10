@@ -1,0 +1,58 @@
+# Syntactic Grammar for EASYC
+
+<program>             ::= <statement>*
+<statement>           ::= <expr> ";"
+                        | <if_statement>
+                        | <while_statement>
+<compound_statement>  ::= "{" <statement>* "}"
+
+<expr>                ::= <assign_expr>
+                        | <arith_expr>
+<arith_expr>          ::= <term> (("-" | "+") <term>)*
+<assign_expr>         ::= ("let" <space>)? <identifier> ("=" <expr>)?
+<term>                ::= <factor> (("*" | "/") <factor>)*
+<factor>              ::= ("+" | "-")* (<pow> | <atom>)
+<priority_factor>     ::= "(" <arith_expr> ")" | <pow> | <atom>
+<pow>                 ::= <priority_factor> "^" <priority_factor>              
+<atom>                ::= <digit>+
+                        | <identifier>
+                        | <string>
+                        | "(" <expr> ")"
+
+
+<expr_bool>           ::= <expr_bool_or>
+                        | "(" <expr_bool_or> ")"
+<expr_bool_or>        ::= <expr_bool_and> (<space> "||" <space> <expr_bool_and>)*
+<expr_bool_and>       ::= <expr_bool_not> (<space> "&&" <space> <expr_bool_not>)*
+<expr_bool_not>       ::= "!" <expr_bool_not>
+                        | <expr_bool_rel>
+                        | "(" <expr_bool> ")"				  
+<expr_bool_rel>       ::= <arith_expr> <op_bool> <arith_expr>
+                        | <arith_expr>
+<op_bool>             ::= "<"
+                        | ">"
+                        | "<="
+                        | ">="
+                        | "!="
+                        | "=="
+                        | "&&"
+                        | "||"
+
+
+<while_statement>     ::= "while" <statement_structure>
+<if_statement>        ::= "if" <statement_structure> <elseif_statement>* <else_statement>?
+<elseif_statement>	  ::= "elseif" <statement_structure>
+<else_statement>      ::= "else" <compound_statement>
+<statement_structure> ::= "(" <expr_bool> ")" (<expr> ";" | <compound_statement>)
+
+<identifier>          ::= <letter> <letter_or_digit>*
+<string>              ::= <quote> (<letter_or_digit> | "_" | " ")+ <quote>
+<letter>              ::= [a-z]
+                        | [A-Z]
+                        | "_"
+<letter_or_digit>     ::= <letter>
+                        | <digit>
+<digit>               ::= [0-9]
+<space>               ::= " "
+<new_line>            ::= "\n"
+<quote>               ::= "\""
