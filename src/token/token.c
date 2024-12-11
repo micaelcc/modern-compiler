@@ -37,8 +37,10 @@ void print_tokens(Token *t)
     for (; strcmp(t->value, E0F) != 0; t++)
         if (t->type)
             printf("%s:%s, ", t->type, t->value);
-        else
-            printf("%s, ", t->value);
+        else if(t->value[0] == ',')
+            printf("\"%s\", ", t->value);
+	else
+	    printf("%s, ", t->value);
 
     printf("$EOF]\n");
 }

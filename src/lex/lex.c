@@ -50,7 +50,7 @@ Token *make_tokens(const char value[])
             lexema = make_bool_operator(value, &current);
             type = NULL;
         }
-        else if (is_symbol(c))
+        else if (is_symbol(c) || c == ',')
         {
             lexema = malloc(2 * sizeof(char));
             sprintf(lexema, "%c", c);
