@@ -63,6 +63,8 @@ const char *SYMBOLS[] = {
     ASSIGN,
     LPAR,
     RPAR,
+    LSQUARE,
+    RSQUARE,
     RBRACE,
     LBRACE,
     NULL
