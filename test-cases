@@ -1,0 +1,53 @@
+// let a=[2,3,4,5];let i;let aux;for(aux=0,i=1;i<5;i=i+1){aux=a[i]+aux;}let new;if(aux>10)new=aux;else new=-10;let a=[1,2,3,4];let b=[1,2,3]+a[1]+1;
+let a = [2, 3, 4, 5];
+let i;
+let aux;
+for (aux = 0, i = 1; i < 5; i = i + 1) {
+  aux = a[i] + aux;
+}
+let new;
+if (aux > 10) new = aux;
+else new = -10;
+let a = [1, 2, 3, 4];
+let b = [1, 2, 3] + a[1] + 1;
+
+//let x=5;
+let x = 5;
+
+//let y=3+2;
+let y = 3 + 2;
+
+//let z=(4+3)*2;
+let z = (4 + 3) * 2;
+
+
+//if(x>10){let result="Greater";}elseif(x==10){let result="Equal";}else {let result="Lesser";}
+if (x > 10) {
+  let result = "Greater";
+} else if (x == 10) {
+  let result = "Equal";
+} else {
+  let result = "Lesser";
+}
+
+//let x=1;let y=2;let z=(x+y)*3;while(z>0){if(z+2==0){z=z/2;}else {z=z-1;}}
+let x = 1;
+let y = 2;
+let z = (x + y) * 3;
+while (z > 0) {
+  if (z + 2 == 0) {
+    z = z / 2;
+  } else {
+    z = z - 1;
+  }
+}
+
+//if((x>3 && (y<5 || z>10)) && !(w==0)){let result=(x+y)^2;}else {while(z<20){let temp=z*2;z=z+1;}}
+if ((x > 3 && (y < 5 || z > 10)) && !(w == 0)) {
+  let result = (x + y) ^ 2;
+} else {
+  while (z < 20) {
+    let temp = z * 2;
+    z = z + 1;
+  }
+}

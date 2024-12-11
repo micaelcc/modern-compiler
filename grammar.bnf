@@ -1,62 +1,67 @@
 # Syntactic Grammar for EASYC
 
-<program>            ::= <statement>*
-<statement>          ::= <expr> ";"
-                      | <if_statement>
-                      | <while_statement>
-                      | <for_statement>
-<compound_statement> ::= "{" <statement>* "}"
+<program>              ::= <statement>*
+<statement>            ::= <expr> ";"
+                         | <if_statement>
+                         | <while_statement>
+                         | <for_statement>
+<compound_statement>   ::= "{" <statement>* "}"
 
-<expr>               ::= <assign_expr>
-                      | <arith_expr>
-<arith_expr>         ::= <term> (("-" | "+") <term>)*
-<assign_expr>        ::= ("let" <space>)? <identifier> ("=" <expr>)?
-<term>               ::= <factor> (("" | "/") <factor>)
-<factor>             ::= ("+" | "-")* (<pow> | <atom>)
-<priority_factor>    ::= "(" <arith_expr> ")" | <pow> | <atom>
-<pow>                ::= <priority_factor> "^" <priority_factor>              
-<atom>               ::= <digit>+
-                      | <identifier>
-                      | <string>
-                      | "(" <expr> ")"
+<expr>                 ::= <assign_expr>
+                         | <arith_expr>                         
 
-
-<expr_bool>          ::= <expr_bool_or>
-                      | "(" <expr_bool_or> ")"
-<expr_bool_or>       ::= <expr_bool_and> (<space> "||" <space> <expr_bool_and>)*
-<expr_bool_and>      ::= <expr_bool_not> (<space> "&&" <space> <expr_bool_not>)*
-<expr_bool_not>      ::= "!" <expr_bool_not>
-                      | <expr_bool_rel>
-                      | "(" <expr_bool> ")"				  
-<expr_bool_rel>      ::= <arith_expr> <op_bool> <arith_expr>
-					  | <expr_bool> <op_bool> <expr_bool>
-                      | <arith_expr>
-<op_bool>            ::= "<"
-                      | ">"
-                      | "<="
-                      | ">="
-                      | "!="
-                      | "=="
-                      | "&&"
-                      | "||"
+<arith_expr>           ::= <term> (("-" | "+") <term>)*
+<assign_expr>          ::= ("let" <space>)? <identifier> ("=" <expr>)?
+<array>		   		   ::= "[" <items_array>? "]"
+<items_array>          ::= <atom> <items_array_tail>?
+<items_array_tail>	   ::= "," <atom> <items_array_tail>?
+<term>                 ::= <factor> (("*" | "/") <factor>)*
+<factor>               ::= ("+" | "-")* (<pow> | <atom>)
+<priority_factor>      ::= "(" <arith_expr> ")" | <atom>
+<pow>                  ::= <priority_factor> "^" <priority_factor>              
+<atom>                 ::= <digit>+
+                         | <identifier>
+                         | <string>
+                         | "(" <expr> ")"
+                         | <array>
 
 
-<while_statement>    ::= "while" <statement_structure>
-<if_statement>       ::= "if" <statement_structure> <elseif_statement>* <else_statement>?
-<elseif_statement>	 ::= "elseif" <statement_structure>
-<else_statement>     ::= "else" <compound_statement>
-<statement_structure> ::= "(" <expr_bool> ")" (<expr> ";" | <compound_statement>)
-<for_statement> ::= "for" "(" <assign_expr_list>? ";" <expr_bool>? ";" <assign_expr_list>? ")" <compound_statement>
-<assign_expr_list> ::= <assign_expr> | <assign_expr> "," <assign_expr_list> 
+<expr_bool>            ::= <expr_bool_or>
+                         | "(" <expr_bool_or> ")"
+<expr_bool_or>         ::= <expr_bool_and> (<space> "||" <space> <expr_bool_and>)*
+<expr_bool_and>        ::= <expr_bool_not> (<space> "&&" <space> <expr_bool_not>)*
+<expr_bool_not>        ::= "!" <expr_bool_not>
+                         | <expr_bool_rel>
+                         | "(" <expr_bool> ")"                            
+<expr_bool_rel>        ::= <arith_expr> <op_bool> <arith_expr>
+                                             | <expr_bool> <op_bool> <expr_bool>
+                         | <arith_expr>
+<op_bool>              ::= "<"
+                         | ">"
+                         | "<="
+                         | ">="
+                         | "!="
+                         | "=="
 
-<identifier>         ::= <letter> <letter_or_digit>*
-<string>             ::= <quote> (<letter_or_digit> | "_" | " ")+ <quote>
-<letter>             ::= [a-z]
-                      | [A-Z]
-                      | "_"
-<letter_or_digit>    ::= <letter>
-                      | <digit>
-<digit>              ::= [0-9]
-<space>              ::= " "
-<new_line>           ::= "\n"
-<quote>              ::= "\""
+<while_statement>      ::= "while" <statement_structure>
+<if_statement>         ::= "if" <statement_structure> <elseif_statement>* <else_statement>?
+<elseif_statement>         ::= "elseif" <statement_structure>
+<else_statement>       ::= "else" <space> (<expr> ";" | <compound_statement>)
+<statement_structure>  ::= "(" <expr_bool> ")" (<expr> ";" | <compound_statement>)
+<for_statement>        ::= "for" "(" <assign_expr_list>? ";" <expr_bool>? ";" <assign_expr_list>? ")"
+                             <compound_statement>
+<assign_expr_list>     ::= <assign_expr> <assign_expr_tail>?
+<assign_expr_tail>     ::= "," <assign_expr> <assign_expr_tail>?
+
+<identifier>           ::= <array_item> | <letter> <letter_or_digit>*
+<string>               ::= <quote> (<letter_or_digit> | "_" | " ")+ <quote>
+<array_item>	       ::= <identifier> "[" <arith_expr> "]"
+<letter>               ::= [a-z]
+                         | [A-Z]
+                         | "_"
+<letter_or_digit>      ::= <letter>
+                         | <digit>
+<digit>                ::= [0-9]
+<space>                ::= " "
+<new_line>             ::= "\n"
+<quote>                ::= "\""
