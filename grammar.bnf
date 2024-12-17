@@ -34,7 +34,7 @@
                          | <expr_bool_rel>
                          | "(" <expr_bool> ")"                            
 <expr_bool_rel>        ::= <arith_expr> <op_bool> <arith_expr>
-                                             | <expr_bool> <op_bool> <expr_bool>
+                         | <expr_bool> <op_bool> <expr_bool>
                          | <arith_expr>
 <op_bool>              ::= "<"
                          | ">"
@@ -45,11 +45,11 @@
 
 <while_statement>      ::= "while" <statement_structure>
 <if_statement>         ::= "if" <statement_structure> <elseif_statement>* <else_statement>?
-<elseif_statement>         ::= "elseif" <statement_structure>
+<elseif_statement>     ::= "elseif" <statement_structure>
 <else_statement>       ::= "else" <space> (<expr> ";" | <compound_statement>)
 <statement_structure>  ::= "(" <expr_bool> ")" (<expr> ";" | <compound_statement>)
 <for_statement>        ::= "for" "(" <assign_expr_list>? ";" <expr_bool>? ";" <assign_expr_list>? ")"
-                             <compound_statement>
+                           <compound_statement>
 <assign_expr_list>     ::= <assign_expr> <assign_expr_tail>?
 <assign_expr_tail>     ::= "," <assign_expr> <assign_expr_tail>?
 
