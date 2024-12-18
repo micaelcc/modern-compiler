@@ -1,6 +1,9 @@
 #include "lex.h"
 
-Token *make_tokens(const char value[])
+Token* TOKENS = NULL;
+size_t current_token_index = 0;
+
+void make_tokens(const char value[])
 {
     size_t current = 0;
     size_t column = -1;
@@ -13,7 +16,7 @@ Token *make_tokens(const char value[])
     while (c != '\0')
     {
         char *lexema = NULL;
-        char *type = NULL;
+        TokenType type = TOKEN_UNK;
 
         if (strchr(" \t", c))
         {
@@ -27,17 +30,17 @@ Token *make_tokens(const char value[])
         else if (is_number(c))
         {
             lexema = make_lexema(value, &current, is_number);
-            type = strchr(lexema, '.') ? FLOAT : INTEGER;
+            type = strchr(lexema, '.') ? TOKEN_FLOAT : TOKEN_INTEGER;
         }
         else if (is_identifier(c))
         {
             lexema = make_lexema(value, &current, is_identifier);
-            type = contains(KEYWORDS, lexema) ? KEY : ID;
+            type = contains(KEYWORDS, lexema) ? TOKEN_KEY : TOKEN_ID;
         }
         else if (is_string(c))
         {
             lexema = make_lexema(value, &current, is_character_of_str);
-            type = STRING;
+            type = TOKEN_STRING;
         }
         else if (is_arith_operator(c))
         {
@@ -48,7 +51,6 @@ Token *make_tokens(const char value[])
         else if (is_bool_operator(c, value[current+1]))
         {
             lexema = make_bool_operator(value, &current);
-            type = NULL;
         }
         else if (is_symbol(c) || c == ',')
         {
@@ -71,9 +73,9 @@ Token *make_tokens(const char value[])
         c = value[current];
     }
 
-    tokens = push_token(create_token(NULL, E0F), tokens, &index_tokens);
+    tokens = push_token(create_token(TOKEN_UNK, E0F), tokens, &index_tokens);
 
-    return tokens;
+    set_tokens(tokens);
 }
 
 void advance_next_char(char *s, size_t *row, size_t *column, size_t *index) {
@@ -175,3 +177,21 @@ bool is_symbol(char c)
     return 0;
 }
 
+void set_tokens(Token* tokens) {
+    current_token_index = 0;
+    TOKENS = tokens;
+}
+
+Token* get_tokens() {
+    return TOKENS;
+}
+
+Token peek_current_token() {
+    return TOKENS[current_token_index];
+}
+
+Token peek_next_token() {
+    current_token_index++;
+
+    return TOKENS[current_token_index];
+}

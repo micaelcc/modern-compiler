@@ -10,8 +10,12 @@
 
 typedef bool (*LexemaCondition)(char);
 
+void set_tokens(Token*);
+Token* get_tokens();
+Token peek_current_token();
+Token peek_next_token();
+void make_tokens(const char[]);
 void advance_next_char(char *, size_t *, size_t *, size_t *);
-Token *make_tokens(const char[]);
 char *make_bool_operator(const char[], size_t *);
 char *make_lexema(const char[], size_t *, LexemaCondition);
 bool is_end_of_statement(char);

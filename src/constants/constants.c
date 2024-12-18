@@ -40,6 +40,7 @@ const char GE[] = ">=";
 const char NE[] = "!=";
 const char AND[] = "&&";
 const char OR[] = "||";
+const char COMMA[] = ",";
 
 const char *KEYWORDS[] = {
     DEF_VAR,

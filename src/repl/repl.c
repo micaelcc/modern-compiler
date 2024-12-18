@@ -32,8 +32,10 @@ void prompt()
             continue;
         }
 
-        Token *tokens = make_tokens(s);
+        make_tokens(s);
 
+        Token* tokens = get_tokens();
+        
         printf("Step[Lexer] -> ");
         print_tokens(tokens);
         free(tokens);
