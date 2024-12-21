@@ -17,8 +17,7 @@
 <items_array_tail>	   ::= "," <atom> <items_array_tail>?
 <term>                 ::= <factor> (("*" | "/") <factor>)*
 <factor>               ::= ("+" | "-")* (<pow> | <atom>)
-<priority_factor>      ::= "(" <arith_expr> ")" | <atom>
-<pow>                  ::= <priority_factor> "^" <priority_factor>              
+<pow>                  ::= <atom> "^" <atom>              
 <atom>                 ::= <digit>+
                          | <identifier>
                          | <string>
@@ -33,9 +32,9 @@
 <expr_bool_not>        ::= "!" <expr_bool_not>
                          | <expr_bool_rel>
                          | "(" <expr_bool> ")"                            
-<expr_bool_rel>        ::= <arith_expr> <op_bool> <arith_expr>
-                         | <expr_bool> <op_bool> <expr_bool>
+<expr_bool_rel>        ::= <atom> <op_bool> <atom>
                          | <arith_expr>
+                         
 <op_bool>              ::= "<"
                          | ">"
                          | "<="

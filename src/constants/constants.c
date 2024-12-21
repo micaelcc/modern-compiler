@@ -27,8 +27,8 @@ const char LPAR[] = "(";
 const char RPAR[] = ")";
 const char LSQUARE[] = "[";
 const char RSQUARE[] = "]";
-const char RBRACE[] = "{";
-const char LBRACE[] = "}";
+const char RBRACE[] = "}";
+const char LBRACE[] = "{";
 const char EQ[] = "==";
 const char ASSIGN[] = "=";
 const char POW[] = "^";
@@ -41,6 +41,7 @@ const char NE[] = "!=";
 const char AND[] = "&&";
 const char OR[] = "||";
 const char COMMA[] = ",";
+const char NOT[] = "!";
 
 const char *KEYWORDS[] = {
     DEF_VAR,
@@ -68,6 +69,8 @@ const char *SYMBOLS[] = {
     RSQUARE,
     RBRACE,
     LBRACE,
+    COMMA,
+    NOT,
     NULL
 };
 

@@ -36,6 +36,7 @@ typedef enum {
     TOKEN_POW,
     TOKEN_QUOTES,
     TOKEN_COMMA,
+    TOKEN_NOT,
     TOKEN_UNK = -1
 } TokenType;
 

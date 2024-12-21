@@ -4,7 +4,8 @@
 #include "../utils/string-utils.h"
 #include "../lex/lex.h"
 #include "../token/token.h"
-
+#include "../parser/implementations/recursive.h"
+#include "../parser/errors/syntax-error.h"
 void print_samples();
 void prompt();
 

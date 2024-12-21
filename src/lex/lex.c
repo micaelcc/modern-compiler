@@ -5,6 +5,7 @@ size_t current_token_index = 0;
 
 void make_tokens(const char value[])
 {
+    printf("%s\n", value);
     size_t current = 0;
     size_t column = -1;
     size_t row = -1;
@@ -52,10 +53,12 @@ void make_tokens(const char value[])
         {
             lexema = make_bool_operator(value, &current);
         }
-        else if (is_symbol(c) || c == ',')
+        else if (is_symbol(c))
         {
             lexema = malloc(2 * sizeof(char));
+            
             sprintf(lexema, "%c", c);
+
             advance_next_char(value, &row, &column, &current);
         }
         else
@@ -190,8 +193,28 @@ Token peek_current_token() {
     return TOKENS[current_token_index];
 }
 
-Token peek_next_token() {
-    current_token_index++;
+Token peek_next_token_no_advance() {    
+    return TOKENS[current_token_index+1];
+}
 
+Token peek_next_token() {
+    current_token_index+=1;
+    
     return TOKENS[current_token_index];
+}
+
+size_t get_current_token_index() {
+    return current_token_index;
+}
+
+bool look_ahead(TokenType t) {
+    int curr_token_index = current_token_index;
+
+    for (; TOKENS[curr_token_index].type != TOKEN_EOF; curr_token_index++) {
+        if (TOKENS[curr_token_index].type == t) {
+            return true;
+        }
+    }
+
+    return false;
 }

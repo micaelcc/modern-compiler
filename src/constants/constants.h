@@ -45,6 +45,8 @@ extern const char NE[];
 extern const char AND[];
 extern const char OR[];
 extern const char COMMA[];
+extern const char NOT[];
+
 
 extern const char *KEYWORDS[];
 

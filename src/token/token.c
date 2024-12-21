@@ -106,6 +106,9 @@ TokenType get_token_type(char *value) {
     
     if (0 == strcmp(value, COMMA))
         return TOKEN_COMMA;
+    
+    if (0 == strcmp(value, NOT))
+        return TOKEN_NOT;
 
     return TOKEN_UNK;
 }
@@ -135,10 +138,12 @@ void print_tokens(Token *t)
         if (type != NULL)
             printf("\033[32m ⦃%s:%s⦄\033[0m", get_constant_by_type(t->type), t->value);
 	    else 
-	        printf("\033[34m ⦃%s⦄\033[0m", t->value);
+	        printf("\033[34m ⦃%d: %s⦄\033[0m", t->type, t->value);
         
     }
 
-    free(type);
-    printf("\033[30m [$EOF]\033[0m\n\n");
+    
+    printf("\033[30m [%d:$EOF]\033[0m\n\n", t->type);
+
+    
 }

@@ -36,8 +36,9 @@ void prompt()
 
         Token* tokens = get_tokens();
         
-        printf("Step[Lexer] -> ");
+        printf("Step[Lexer] -> OK");
         print_tokens(tokens);
-        free(tokens);
+        handle_program();
+        
     }
 }
