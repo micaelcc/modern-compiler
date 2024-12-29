@@ -16,7 +16,7 @@ Token peek_current_token();
 Token peek_next_token();
 Token peek_next_token_no_advance();
 size_t get_current_token_index();
-bool look_ahead(TokenType t);
+bool look_ahead(TokenType t, bool is, bool is2);
 void make_tokens(const char[]);
 void advance_next_char(char *, size_t *, size_t *, size_t *);
 char *make_bool_operator(const char[], size_t *);

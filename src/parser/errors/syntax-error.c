@@ -1,14 +1,13 @@
 #include "syntax-error.h"
 
 void error_handler(char error_msg[]) {
-    char** error_log = get_current_line_error_log();
+    if (PARSER_ERROR) return;
+    //char** error_log = get_current_line_error_log();
 
-    printf("\nSyntax error: %s\n", error_msg);
-
-    printf("\n\033[32m %s\033[0m\n", error_log[0]);
-    printf("\033[34m %s\033[0m\n",error_log[1]);
-
-    exit(1);
+    printf("\033[0;31m\t\tSyntax error: %s\033[0m\n", error_msg);
+    PARSER_ERROR = 1;
+    //printf("\n\033[32m %s\033[0m\n", error_log[0]);
+    //printf("\033[34m %s\033[0m\n",error_log[1]);
 }
 
 char** get_current_line_error_log() {
@@ -18,9 +17,7 @@ char** get_current_line_error_log() {
     size_t last_tok_index = first_tok_index;
     size_t size = 0;
     Token* tokens = get_tokens();
-        printf("%d %d\n", first_tok_index, last_tok_index);
 
-    printf("%d\n", first_tok_index);
     while(first_tok_index >= 0 && tokens[first_tok_index].type != TOKEN_KEY && tokens[first_tok_index].type != TOKEN_SEMICOLON) {
         size += strlen(tokens[first_tok_index].value);
         first_tok_index--;

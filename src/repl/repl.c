@@ -35,10 +35,14 @@ void prompt()
         make_tokens(s);
 
         Token* tokens = get_tokens();
-        
-        printf("Step[Lexer] -> OK");
+        printf("\033[38;5;202mStep[Lexer] ->\033[0m");
         print_tokens(tokens);
-        handle_program();
-        
+
+        printf("\033[38;5;202m\nStep[Parser] -> \033[0m");
+        PARSER_ERROR = 0;
+        execute_recursive_descendent();
+
+        if (!PARSER_ERROR) printf("\033[0;32m\t\tOk\033[0m\n");
+
     }
 }

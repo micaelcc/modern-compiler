@@ -26,13 +26,12 @@
 
 
 <expr_bool>            ::= <expr_bool_or>
-                         | "(" <expr_bool_or> ")"
 <expr_bool_or>         ::= <expr_bool_and> (<space> "||" <space> <expr_bool_and>)*
 <expr_bool_and>        ::= <expr_bool_not> (<space> "&&" <space> <expr_bool_not>)*
 <expr_bool_not>        ::= "!" <expr_bool_not>
                          | <expr_bool_rel>
                          | "(" <expr_bool> ")"                            
-<expr_bool_rel>        ::= <atom> <op_bool> <atom>
+<expr_bool_rel>        ::= <arith_expr> <op_bool> <arith_expr>
                          | <arith_expr>
                          
 <op_bool>              ::= "<"

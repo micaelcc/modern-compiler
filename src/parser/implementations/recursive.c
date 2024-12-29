@@ -1,38 +1,107 @@
 #include "recursive.h"
 
-void handle_program() {
-    //printf("handle program\n");
-    while(0 != strcmp(peek_current_token().value, E0F)) {
+void handle_program()
+{
+    if (PARSER_ERROR) return;
+    while (!PARSER_ERROR && 0 != strcmp(peek_current_token().value, E0F))
+    {
         handle_statement();
     }
 }
 
-void handle_statement() {
-        printf("handle  statement %s\n", peek_current_token().value);
-
-    Token curr_tok = peek_current_token();
-
-    if (0 == strcmp(curr_tok.value, IF)) {
-
-    } else if (0 == strcmp(curr_tok.value, WHILE)) {
-        handle_while();
-    } else if (0 == strcmp(curr_tok.value, FOR)) {
-        handle_for();
-    } else {
-        handle_expr();
-
-        if (peek_current_token().type == TOKEN_SEMICOLON) {
-            peek_next_token();
-        } else {
-            error_handler("Expected: ;");
-        }
-    }    
+void handle_else()
+{
+    if (PARSER_ERROR) return;
+    if (0 == strcmp(peek_current_token().value, ELSE))
+    {
+        peek_next_token();
+        handle_compound_statement();
+    }
 }
 
-void handle_while() {
-            printf("handle  while %s\n", peek_current_token().value);
+void handle_if()
+{
+    if (PARSER_ERROR) return;
+    if (0 == strcmp(peek_current_token().value, IF))
+    {
+        peek_next_token();
+        handle_statement_structure();
 
-    if (0 == strcmp(peek_current_token().value, WHILE)) {
+        while (!PARSER_ERROR && 0 == strcmp(peek_current_token().value, ELSE))
+        {
+            if (0 == strcmp(peek_next_token_no_advance().value, IF))
+            {
+                peek_next_token();
+
+                handle_if();
+            }
+            else
+            {
+                handle_else();
+            }
+        }
+    }
+}
+
+void handle_statement()
+{
+    if (PARSER_ERROR) return;
+    Token curr_tok = peek_current_token();
+    if (0 == strcmp(curr_tok.value, IF))
+    {
+        handle_if();
+    }
+    else if (0 == strcmp(curr_tok.value, WHILE))
+    {
+        handle_while();
+    }
+    else if (0 == strcmp(curr_tok.value, FOR))
+    {
+        handle_for();
+    }
+    else if (curr_tok.type == TOKEN_AND 
+        || curr_tok.type == TOKEN_ASSIGN 
+        || curr_tok.type == TOKEN_COMMA 
+        || curr_tok.type == TOKEN_DIV 
+        || curr_tok.type == TOKEN_EQ 
+        || curr_tok.type == TOKEN_GE 
+        || curr_tok.type == TOKEN_GT 
+        || curr_tok.type == TOKEN_LBRACE 
+        || curr_tok.type == TOKEN_LE 
+        || curr_tok.type == TOKEN_LSQUARE 
+        || curr_tok.type == TOKEN_LT 
+        || curr_tok.type == TOKEN_MUL 
+        || curr_tok.type == TOKEN_NE 
+        || curr_tok.type == TOKEN_NOT 
+        || curr_tok.type == TOKEN_OR 
+        || curr_tok.type == TOKEN_RSQUARE 
+        || curr_tok.type == TOKEN_RPAREN 
+        || curr_tok.type == TOKEN_RBRACE 
+        || curr_tok.type == TOKEN_POW
+    )
+    {
+        error_handler("Expected: Expr | If | While | For");
+    }
+    else
+    {
+        handle_expr();
+
+        if (peek_current_token().type == TOKEN_SEMICOLON)
+        {
+            peek_next_token();
+        }
+        else
+        {
+            error_handler("Expected: ;");
+        }
+    }
+}
+
+void handle_while()
+{
+    if (PARSER_ERROR) return;
+    if (0 == strcmp(peek_current_token().value, WHILE))
+    {
         peek_next_token();
         handle_statement_structure();
     }
@@ -40,309 +109,453 @@ void handle_while() {
     return;
 }
 
-void handle_compound_statement() {
-            printf("handle_compound_statement %d\n", peek_current_token().type);
-
-    if (peek_current_token().type == TOKEN_LBRACE) {
-        if (!look_ahead(TOKEN_RBRACE)) {
+void handle_compound_statement()
+{
+    if (PARSER_ERROR) return;
+    if (peek_current_token().type == TOKEN_LBRACE)
+    {
+        if (!look_ahead(TOKEN_RBRACE, true, true))
+        {
             error_handler("Expected: }");
         }
 
-        Token next_tok = peek_next_token();
+        peek_next_token();
 
-        while(next_tok.type != TOKEN_RBRACE) {
+        while (!PARSER_ERROR && peek_current_token().type != TOKEN_RBRACE)
+        {
+
             handle_statement();
-            next_tok = peek_next_token();
         }
-    } else {
+
+        if (peek_current_token().type == TOKEN_RBRACE)
+        {
+            peek_next_token();
+        }
+    }
+    else
+    {
         error_handler("Expected: {");
     }
 }
 
-void handle_expr_bool_rel() {
-        printf("handle_expr_bool_rel %s\n", peek_current_token().value);
-
+void handle_expr_bool_op()
+{
+    if (PARSER_ERROR) return;
+    if (peek_current_token().type == TOKEN_EQ 
+        || peek_current_token().type == TOKEN_LE 
+        || peek_current_token().type == TOKEN_GE 
+        || peek_current_token().type == TOKEN_NE
+    )
+    {
+        peek_next_token();
+        peek_next_token();
+    }
+    else if (peek_current_token().type == TOKEN_GT 
+        || peek_current_token().type == TOKEN_LT 
+        || peek_current_token().type == TOKEN_NOT
+    )
+    {
+        peek_next_token();
+    }
+}
+void handle_expr_bool_rel()
+{
+    if (PARSER_ERROR) return;
     Token next_tok = peek_next_token_no_advance();
 
     if (
-        next_tok.type == TOKEN_LE
-        || next_tok.type == TOKEN_GE
-        || next_tok.type == TOKEN_GT
-        || next_tok.type == TOKEN_LT
-        || next_tok.type == TOKEN_NOT
-        || next_tok.type == TOKEN_NE
-    ) {
-        handle_atom();
+        look_ahead(TOKEN_LE, false, true) 
+        || look_ahead(TOKEN_GE, false, true) 
+        || look_ahead(TOKEN_GT, false, true) 
+        || look_ahead(TOKEN_LT, false, true) 
+        || look_ahead(TOKEN_NOT, false, true) 
+        || look_ahead(TOKEN_NE, false, true) 
+        || look_ahead(TOKEN_EQ, false, true)
+    )
+    {
+        handle_arith_expr();
 
         peek_next_token();
 
-        handle_atom();
-    } else {
+        handle_arith_expr();
+    }
+    else
+    {
         handle_arith_expr();
     }
 }
 
-void handle_expr_bool_not() {
-        printf("handle_expr_bool_not %s\n", peek_current_token().value);
-
-    if (peek_current_token().type == TOKEN_NOT) {
+void handle_expr_bool_not()
+{
+    if (PARSER_ERROR) return;
+    if (peek_current_token().type == TOKEN_NOT)
+    {
         peek_next_token();
     }
 
-    if (peek_current_token().type == TOKEN_LPAREN) {
+    if (peek_current_token().type == TOKEN_LPAREN)
+    {
         peek_next_token();
 
         handle_expr_bool();
-    } else {
+
+        if (peek_current_token().type == TOKEN_RPAREN)
+        {
+            peek_next_token();
+        }
+        else
+        {
+            error_handler("Expected: )");
+        }
+    }
+    else
+    {
         handle_expr_bool_rel();
     }
 }
 
-void handle_expr_bool_and() {
-        printf("handle_expr_bool_and %s\n", peek_current_token().value);
-
+void handle_expr_bool_and()
+{
+    if (PARSER_ERROR) return;
     handle_expr_bool_not();
 
-    Token next_tok = peek_current_token();
-    while(next_tok.type == TOKEN_AND) {
+    while (!PARSER_ERROR && peek_current_token().type == TOKEN_AND)
+    {
         peek_next_token();
-        
+
         handle_expr_bool_not();
     }
 }
 
-void handle_expr_bool_or() {
-        printf("handle_expr_bool_or %s\n", peek_current_token().value);
-
+void handle_expr_bool_or()
+{
+    if (PARSER_ERROR) return;
     handle_expr_bool_and();
 
-    Token next_tok = peek_current_token();
-    while(next_tok.type == TOKEN_OR) {
+    while (!PARSER_ERROR && peek_current_token().type == TOKEN_OR)
+    {
         peek_next_token();
 
         handle_expr_bool_and();
     }
 }
 
-void handle_expr_bool() {
-    printf("handle_expr_bool %s\n", peek_current_token().value);
-
-    if (peek_current_token().type == TOKEN_LPAREN) {
-        peek_next_token();
-
-        handle_expr_bool_or();
-
-        if (peek_current_token().type == TOKEN_RPAREN) {
-            peek_next_token();
-        } else {
-            error_handler("Expected: )");
-        }
-    } else {
-        handle_expr_bool_or();
-    }
+void handle_expr_bool()
+{
+    if (PARSER_ERROR) return;
+    handle_expr_bool_or();
 }
 
-void handle_statement_structure() {
-    printf("handle_statement_structure %s\n", peek_current_token().value);
-    if (peek_current_token().type == TOKEN_LPAREN) {
+void handle_statement_structure()
+{
+    if (PARSER_ERROR) return;
+    if (peek_current_token().type == TOKEN_LPAREN)
+    {
         peek_next_token();
 
-        if (peek_current_token().type == TOKEN_RPAREN) 
+        if (peek_current_token().type == TOKEN_RPAREN)
             error_handler("Expected: bool expression");
-            
+
         handle_expr_bool();
 
-        if (peek_current_token().type == TOKEN_RPAREN) {
+        if (peek_current_token().type == TOKEN_RPAREN)
+        {
             peek_next_token();
             handle_compound_statement();
-        } else {
+        }
+        else
+        {
             error_handler("Expected: )");
         }
-    } else {
+    }
+    else
+    {
         error_handler("Expected: ;()");
     }
 }
 
-/**/
-/**/
-/**/
+void handle_assign_expr_tail()
+{
+    if (PARSER_ERROR) return;
+    handle_assign_expr();
 
-/**/
-
-void handle_for() {
-    return;
-    /*
-    if (0 == strcmp(peek_current_token().value, FOR)) {
+    while (!PARSER_ERROR && peek_current_token().type == TOKEN_COMMA)
+    {
         peek_next_token();
 
-        if (peek_current_token().type == TOKEN_LPAREN) {
+        handle_assign_expr();
+    }
+}
+
+void handle_assign_expr_list()
+{
+    if (PARSER_ERROR) return;
+    handle_assign_expr();
+    if (peek_current_token().type == TOKEN_COMMA)
+    {
+        peek_next_token();
+
+        handle_assign_expr_tail();
+    }
+}
+
+void handle_for()
+{
+    if (PARSER_ERROR) return;
+    if (0 == strcmp(peek_current_token().value, FOR))
+    {
+        peek_next_token();
+
+        if (peek_current_token().type == TOKEN_LPAREN)
+        {
             peek_next_token();
 
             if (0 == strcmp(peek_current_token().value, DEF_VAR) || peek_current_token().type == TOKEN_ID)
                 handle_assign_expr_list();
 
-            if (peek_current_token().type == TOKEN_SEMICOLON) {
+            if (peek_current_token().type == TOKEN_SEMICOLON)
+            {
                 peek_next_token();
-            } else {
+            }
+            else
+            {
                 error_handler("Expected: ; after assign expr list in for");
             }
 
             if (peek_current_token().type != TOKEN_SEMICOLON)
                 handle_expr_bool();
 
-            if (peek_current_token().type == TOKEN_SEMICOLON) {
+            if (peek_current_token().type == TOKEN_SEMICOLON)
+            {
                 peek_next_token();
-            } else {
+            }
+            else
+            {
                 error_handler("Expected: ; after boolean expression in for");
             }
 
             if (0 == strcmp(peek_current_token().value, DEF_VAR) || peek_current_token().type == TOKEN_ID)
                 handle_assign_expr_list();
 
-            if (peek_current_token().type == TOKEN_RPAREN) {
+            if (peek_current_token().type == TOKEN_RPAREN)
+            {
                 peek_next_token();
-            } else {
+            }
+            else
+            {
                 error_handler("Expected: ) after for");
             }
 
             handle_compound_statement();
-        } else {
+        }
+        else
+        {
             error_handler("Expected: ( after for key.");
         }
     }
-*/
 }
 
-void handle_expr() {
-    printf("handle expr %s\n", peek_current_token().value);
-
+void handle_expr()
+{
+    if (PARSER_ERROR) return;
     Token curr_tok = peek_current_token();
     Token next_tok = peek_next_token_no_advance();
+    bool has_assign_token = look_ahead(TOKEN_ASSIGN, false, false);
 
-    if (0 == strcmp(curr_tok.value, DEF_VAR)
-        || curr_tok.type == TOKEN_ID && (next_tok.type == TOKEN_ASSIGN || next_tok.type == TOKEN_SEMICOLON)
-    ) {
+    if (0 == strcmp(curr_tok.value, DEF_VAR) 
+        || curr_tok.type == TOKEN_ID 
+        && (has_assign_token || next_tok.type == TOKEN_SEMICOLON))
+    {
         handle_assign_expr();
-    } else {
+    }
+    else
+    {
         handle_arith_expr();
     }
 }
 
-void handle_assign_expr() {
-    printf("handle assign expr %s\n", peek_current_token().value);
-    if (0 == strcmp(peek_current_token().value, DEF_VAR)) {
+void handle_assign_expr()
+{
+    if (PARSER_ERROR) return;
+    if (0 == strcmp(peek_current_token().value, DEF_VAR))
+    {
         peek_next_token();
 
-        if (peek_current_token().type != TOKEN_ID) {
+        if (peek_current_token().type != TOKEN_ID)
+        {
             error_handler("Expected: IDENTIFIER after let key");
         }
     }
 
-    if (peek_current_token().type == TOKEN_ID) {
-        peek_next_token();
-
-        if (peek_current_token().type == TOKEN_ASSIGN) {
+    if (peek_current_token().type == TOKEN_ID)
+    {
+        handle_array_atom();
+        if (peek_current_token().type == TOKEN_ASSIGN)
+        {
             peek_next_token();
 
             handle_expr();
-        } 
+        }
     }
 }
 
-void handle_arith_expr() {
-    printf("handle arith expr %s\n", peek_current_token().value);
+void handle_arith_expr()
+{
+    if (PARSER_ERROR) return;
     handle_term();
 
-    Token curr_token = peek_current_token();
-
-    while(curr_token.type == TOKEN_PLUS || curr_token.type == TOKEN_MINUS) {
-        curr_token = peek_next_token();
-
+    while (!PARSER_ERROR && peek_current_token().type == TOKEN_PLUS || peek_current_token().type == TOKEN_MINUS)
+    {
+        peek_next_token();
         handle_term();
     }
 }
 
-
-void handle_term() {
-    printf("handle term %s\n", peek_current_token().value);
+void handle_term()
+{
+    if (PARSER_ERROR) return;
     handle_factor();
-    
-    Token curr_token = peek_current_token();
-    while(curr_token.type == TOKEN_MUL || curr_token.type == TOKEN_DIV) {
-        curr_token = peek_next_token();
 
+    while (!PARSER_ERROR && peek_current_token().type == TOKEN_MUL || peek_current_token().type == TOKEN_DIV)
+    {
+        peek_next_token();
         handle_factor();
     }
 }
 
-void handle_factor() {
-    printf("handle factor %s\n", peek_current_token().value);
-    Token curr_token = peek_current_token();
-
-    while(curr_token.type == TOKEN_PLUS || curr_token.type == TOKEN_MINUS) {
-        //printf("%s %d\n", curr_token.value, curr_token.type);
-        curr_token = peek_next_token();
-    }
-
-    Token next_tok = peek_next_token_no_advance();
-
-    if (next_tok.type == TOKEN_POW) {
-        handle_pow();
-    } else {
-        handle_atom();
-    }
-}
-
-void handle_priority_factor() {
-    printf("handle priority factor %s\n", peek_current_token().value);
-    if (peek_current_token().type == TOKEN_LPAREN) {
+void handle_factor()
+{
+    if (PARSER_ERROR) return;
+    while (!PARSER_ERROR && peek_current_token().type == TOKEN_PLUS || peek_current_token().type == TOKEN_MINUS)
+    {
         peek_next_token();
-        handle_arith_expr();
+    }
 
-        if (peek_current_token().type == TOKEN_RPAREN) {
-            peek_next_token();
-        } else {
-            error_handler("Expected: )");
-        }
-    } else {
+    if (peek_current_token().type != TOKEN_POW)
+    {
+        handle_atom();
+    }
+
+    if (peek_current_token().type == TOKEN_POW)
+    {
+        handle_pow();
+    }
+}
+
+void handle_items_array()
+{
+    if (PARSER_ERROR) return;
+    handle_atom();
+
+    while (!PARSER_ERROR && peek_current_token().type == TOKEN_COMMA)
+    {
+        peek_next_token();
         handle_atom();
     }
 }
 
-void handle_atom() {
-        printf("handle  atom %s\n", peek_current_token().value);
+void handle_array()
+{
+    if (PARSER_ERROR) return;
+    if (peek_current_token().type == TOKEN_LSQUARE)
+    {
+        peek_next_token();
 
+        if (peek_current_token().type == TOKEN_RSQUARE)
+        {
+            peek_next_token();
+            return;
+        }
+
+        handle_items_array();
+
+        if (peek_current_token().type == TOKEN_RSQUARE)
+        {
+            peek_next_token();
+        }
+        else
+        {
+            error_handler("Expected: ]");
+        }
+    }
+}
+
+void handle_array_atom()
+{
+    if (PARSER_ERROR) return;
+    if (peek_current_token().type == TOKEN_ID)
+    {
+        peek_next_token();
+
+        if (peek_current_token().type == TOKEN_LSQUARE)
+        {
+            peek_next_token();
+
+            handle_atom();
+
+            if (peek_current_token().type == TOKEN_RSQUARE)
+            {
+                peek_next_token();
+            }
+            else
+            {
+                error_handler("Expected: ]");
+            }
+        }
+    }
+}
+
+void handle_atom()
+{
+    if (PARSER_ERROR) return;
     Token curr_tok = peek_current_token();
-    if (curr_tok.type == TOKEN_LPAREN) {
+    if (curr_tok.type == TOKEN_LPAREN)
+    {
         peek_next_token();
 
         handle_expr();
 
-        if (peek_current_token().type == TOKEN_RPAREN) {
+        if (peek_current_token().type == TOKEN_RPAREN)
+        {
             peek_next_token();
-        } else {
+        }
+        else
+        {
             error_handler("Expected: )");
         }
-    } else if(curr_tok.type == TOKEN_INTEGER 
+    }
+    else if (curr_tok.type == TOKEN_INTEGER 
         || curr_tok.type == TOKEN_FLOAT 
-        || curr_tok.type == TOKEN_STRING 
-        || curr_tok.type == TOKEN_ID) {
+        || curr_tok.type == TOKEN_STRING
+    )
+    {
         peek_next_token();
-    } else {
+    }
+    else if (curr_tok.type == TOKEN_ID)
+    {
+        handle_array_atom();
+    }
+    else if (curr_tok.type == TOKEN_LSQUARE)
+    {
+        handle_array();
+    }
+    else
+    {
         error_handler("Expected: INTEGER | FLOAT | ARRAY | IDENTIFIER | STRING | ( EXPRESSION )");
     }
 }
 
-void handle_pow() {
-                printf("handle  pow %s\n", peek_current_token().value);
-
-    handle_atom();
-
-    if(peek_current_token().type == TOKEN_POW) {
+void handle_pow()
+{
+    if (PARSER_ERROR) return;
+    if (peek_current_token().type == TOKEN_POW)
+    {
         peek_next_token();
 
         handle_atom();
-    } else {
+    }
+    else
+    {
         error_handler("Expected: ^ pow");
     }
 }

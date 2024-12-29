@@ -5,7 +5,6 @@ size_t current_token_index = 0;
 
 void make_tokens(const char value[])
 {
-    printf("%s\n", value);
     size_t current = 0;
     size_t column = -1;
     size_t row = -1;
@@ -52,6 +51,7 @@ void make_tokens(const char value[])
         else if (is_bool_operator(c, value[current+1]))
         {
             lexema = make_bool_operator(value, &current);
+
         }
         else if (is_symbol(c))
         {
@@ -110,15 +110,22 @@ char *make_lexema(const char value[], size_t *index, LexemaCondition cond)
 char *make_bool_operator(const char value[], size_t *index) {
     const size_t start = *index;
     size_t i;
-    
+    bool is_combined = false;
     for (i = 0; BOOL_OPERATORS[i]; i++) {
+
         if (BOOL_OPERATORS[i][0] == value[*index] 
-            && BOOL_OPERATORS[i][1] == value[(*index)++]) {
-            (*index)+=1;
+            && BOOL_OPERATORS[i][1] == value[(*index)+1]) {
+            is_combined = true;
             break;
         }
     }
-    
+
+    (*index)+=1;
+
+    if (is_combined) {
+        (*index)+=1;
+    }
+
     return substring(value, start, (*index-1));
 }
 
@@ -207,10 +214,18 @@ size_t get_current_token_index() {
     return current_token_index;
 }
 
-bool look_ahead(TokenType t) {
+bool look_ahead(TokenType t, bool ignore_semi, bool ignore_rparen) {
     int curr_token_index = current_token_index;
 
     for (; TOKENS[curr_token_index].type != TOKEN_EOF; curr_token_index++) {
+        if (!ignore_semi && TOKENS[curr_token_index].type == TOKEN_SEMICOLON) {
+            break;
+        }
+
+        if (!ignore_rparen && TOKENS[curr_token_index].type == TOKEN_RPAREN) {
+            break;
+        }
+
         if (TOKENS[curr_token_index].type == t) {
             return true;
         }
