@@ -1,5 +1,6 @@
 # Syntactic Grammar for EASYC
 
+
 <program>              ::= <statement>*
 <statement>            ::= <expr> ";"
                          | <if_statement>
@@ -7,11 +8,15 @@
                          | <for_statement>
 <compound_statement>   ::= "{" <statement>* "}"
 
-<expr>                 ::= <assign_expr>
-                         | <arith_expr>                         
+<expr>                 ::= <decl_expr>
+                         | <arith_expr>                    
+                         | <reassign_expr>
 
-<arith_expr>           ::= <term> (("-" | "+") <term>)*
-<assign_expr>          ::= ("let" <space>)? <identifier> ("=" <expr>)?
+<arith_expr>           ::= <term> <arith_expr_tail>?
+<arith_expr_tail>      ::= ("+" | "-") <term> <arith_expr_tail>?
+<decl_expr>            ::= "let" <space> <identifier> ("=" <arith_expr>)?
+<reassign_expr>        ::= <identifier> "=" <arith_expr>
+
 <array>		   		   ::= "[" <items_array>? "]"
 <items_array>          ::= <atom> <items_array_tail>?
 <items_array_tail>	   ::= "," <atom> <items_array_tail>?
@@ -31,8 +36,8 @@
 <expr_bool_not>        ::= "!" <expr_bool_not>
                          | <expr_bool_rel>
                          | "(" <expr_bool> ")"                            
-<expr_bool_rel>        ::= <arith_expr> <op_bool> <arith_expr>
-                         | <arith_expr>
+<expr_bool_rel>        ::= <arith_expr> <expr_bool_rel_tail>?
+<expr_bool_rel_tail>   ::= <op_bool> <arith_expr>
                          
 <op_bool>              ::= "<"
                          | ">"
@@ -48,8 +53,8 @@
 <statement_structure>  ::= "(" <expr_bool> ")" (<expr> ";" | <compound_statement>)
 <for_statement>        ::= "for" "(" <assign_expr_list>? ";" <expr_bool>? ";" <assign_expr_list>? ")"
                            <compound_statement>
-<assign_expr_list>     ::= <assign_expr> <assign_expr_tail>?
-<assign_expr_tail>     ::= "," <assign_expr> <assign_expr_tail>?
+<assign_expr_list>     ::= <reassign_expr> <assign_expr_tail>?
+<assign_expr_tail>     ::= "," <reassign_expr> <assign_expr_tail>?
 
 <identifier>           ::= <array_item> | <letter> <letter_or_digit>*
 <string>               ::= <quote> (<letter_or_digit> | "_" | " ")+ <quote>
