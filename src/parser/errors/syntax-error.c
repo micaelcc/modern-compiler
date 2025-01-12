@@ -1,11 +1,10 @@
 #include "syntax-error.h"
 
 void error_handler(char error_msg[]) {
-    if (PARSER_ERROR) return;
+
     //char** error_log = get_current_line_error_log();
 
     printf("\033[0;31m\t\tSyntax error: %s\033[0m\n", error_msg);
-    PARSER_ERROR = 1;
     //printf("\n\033[32m %s\033[0m\n", error_log[0]);
     //printf("\033[34m %s\033[0m\n",error_log[1]);
 }

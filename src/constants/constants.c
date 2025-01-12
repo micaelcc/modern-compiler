@@ -5,6 +5,7 @@ const char DEF_VAR[] = "let";
 const char WHILE[] = "while";
 const char FOR[] = "for";
 const char ELSE[] = "else";
+const char ELSEIF[] = "elseif";
 
 const char DIGITS[] = "0123456789";
 const char LETTERS[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -50,6 +51,7 @@ const char *KEYWORDS[] = {
     WHILE,
     FOR,
     AND,
+    ELSEIF,
     OR,
     NULL};
 
@@ -71,8 +73,7 @@ const char *SYMBOLS[] = {
     LBRACE,
     COMMA,
     NOT,
-    NULL
-};
+    NULL};
 
 const char *BOOL_OPERATORS[] = {
     LT,
@@ -83,7 +84,6 @@ const char *BOOL_OPERATORS[] = {
     AND,
     OR,
     EQ,
-    NULL
-};
+    NULL};
 
 const char END_OF_STATEMENT[] = ";";

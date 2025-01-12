@@ -9,6 +9,7 @@ extern const char DEF_VAR[];
 extern const char WHILE[];
 extern const char FOR[];
 extern const char ELSE[];
+extern const char ELSEIF[];
 
 extern const char DIGITS[];
 extern const char LETTERS[];
@@ -46,7 +47,6 @@ extern const char AND[];
 extern const char OR[];
 extern const char COMMA[];
 extern const char NOT[];
-
 
 extern const char *KEYWORDS[];
 

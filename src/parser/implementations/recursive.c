@@ -1,90 +1,114 @@
 #include "recursive.h"
 
-void handle_program()
+ASTNode *create_node_current_token()
 {
-    if (PARSER_ERROR) return;
-    while (!PARSER_ERROR && 0 != strcmp(peek_current_token().value, E0F))
-    {
-        handle_statement();
-    }
+    Token t = peek_current_token();
+
+    return create_node(t.value, &t);
 }
 
-void handle_else()
+ASTNode *handle_program()
 {
-    if (PARSER_ERROR) return;
+
+    ASTNode *root = create_node("<program>", NULL);
+
+    while (0 != strcmp(peek_current_token().value, E0F))
+    {
+        ASTNode *handle_statement_node = handle_statement();
+        if (handle_statement_node == NULL)
+        {
+            return handle_statement_node;
+        }
+        add_child(root, handle_statement_node);
+    }
+
+    return root;
+}
+
+ASTNode *handle_else()
+{
+    ASTNode *node = NULL;
+
     if (0 == strcmp(peek_current_token().value, ELSE))
     {
+        node = create_node_current_token();
         peek_next_token();
-        handle_compound_statement();
+
+        add_child(node, handle_compound_statement());
     }
+
+    return node;
 }
 
-void handle_if()
+ASTNode *handle_if()
 {
-    if (PARSER_ERROR) return;
+
+    ASTNode *node = NULL;
+
     if (0 == strcmp(peek_current_token().value, IF))
     {
+        node = create_node_current_token();
+
         peek_next_token();
-        handle_statement_structure();
 
-        while (!PARSER_ERROR && 0 == strcmp(peek_current_token().value, ELSE))
+        ASTNode *statement_structure = handle_statement_structure();
+
+        if (statement_structure == NULL)
+            return NULL;
+
+        add_child(node, statement_structure);
+
+        while (0 == strcmp(peek_current_token().value, ELSEIF))
         {
-            if (0 == strcmp(peek_next_token_no_advance().value, IF))
-            {
-                peek_next_token();
+            add_child(node, handle_elseif());
+        }
 
-                handle_if();
-            }
-            else
-            {
-                handle_else();
-            }
+        if (0 == strcmp(peek_current_token().value, ELSE))
+        {
+            add_child(node, handle_else());
+        }
+
+        if (0 == strcmp(peek_current_token().value, ELSEIF))
+        {
+            error_handler("Expected: IF before ELSEIF");
+
+            return NULL;
         }
     }
+
+    return node;
 }
 
-void handle_statement()
+ASTNode *handle_statement()
 {
-    if (PARSER_ERROR) return;
+
+    ASTNode *node = NULL;
+
     Token curr_tok = peek_current_token();
     if (0 == strcmp(curr_tok.value, IF))
     {
-        handle_if();
+        return handle_if();
     }
     else if (0 == strcmp(curr_tok.value, WHILE))
     {
-        handle_while();
+        return handle_while();
     }
     else if (0 == strcmp(curr_tok.value, FOR))
     {
-        handle_for();
+        return handle_for();
     }
-    else if (curr_tok.type == TOKEN_AND 
-        || curr_tok.type == TOKEN_ASSIGN 
-        || curr_tok.type == TOKEN_COMMA 
-        || curr_tok.type == TOKEN_DIV 
-        || curr_tok.type == TOKEN_EQ 
-        || curr_tok.type == TOKEN_GE 
-        || curr_tok.type == TOKEN_GT 
-        || curr_tok.type == TOKEN_LBRACE 
-        || curr_tok.type == TOKEN_LE 
-        || curr_tok.type == TOKEN_LSQUARE 
-        || curr_tok.type == TOKEN_LT 
-        || curr_tok.type == TOKEN_MUL 
-        || curr_tok.type == TOKEN_NE 
-        || curr_tok.type == TOKEN_NOT 
-        || curr_tok.type == TOKEN_OR 
-        || curr_tok.type == TOKEN_RSQUARE 
-        || curr_tok.type == TOKEN_RPAREN 
-        || curr_tok.type == TOKEN_RBRACE 
-        || curr_tok.type == TOKEN_POW
-    )
+    else if (curr_tok.type == TOKEN_AND || curr_tok.type == TOKEN_ASSIGN || curr_tok.type == TOKEN_COMMA || curr_tok.type == TOKEN_DIV || curr_tok.type == TOKEN_EQ || curr_tok.type == TOKEN_GE || curr_tok.type == TOKEN_GT || curr_tok.type == TOKEN_LBRACE || curr_tok.type == TOKEN_LE || curr_tok.type == TOKEN_LSQUARE || curr_tok.type == TOKEN_LT || curr_tok.type == TOKEN_MUL || curr_tok.type == TOKEN_NE || curr_tok.type == TOKEN_NOT || curr_tok.type == TOKEN_OR || curr_tok.type == TOKEN_RSQUARE || curr_tok.type == TOKEN_RPAREN || curr_tok.type == TOKEN_RBRACE || curr_tok.type == TOKEN_POW)
     {
         error_handler("Expected: Expr | If | While | For");
+        return NULL;
     }
     else
     {
-        handle_expr();
+
+        node = handle_expr();
+
+        Token current_token = peek_current_token();
+        add_child(node, create_node(peek_current_token().value, &current_token));
 
         if (peek_current_token().type == TOKEN_SEMICOLON)
         {
@@ -93,469 +117,651 @@ void handle_statement()
         else
         {
             error_handler("Expected: ;");
+            return NULL;
         }
     }
+
+    return node;
 }
 
-void handle_while()
+ASTNode *handle_elseif()
 {
-    if (PARSER_ERROR) return;
-    if (0 == strcmp(peek_current_token().value, WHILE))
+    ASTNode *node = create_node_current_token();
+
+    peek_next_token();
+
+    add_child(node, handle_statement_structure());
+
+    return node;
+}
+
+ASTNode *handle_while()
+{
+
+    ASTNode *node = NULL;
+    Token current_token = peek_current_token();
+
+    if (0 == strcmp(current_token.value, WHILE))
     {
+        node = create_node("<while_statement>", &current_token);
         peek_next_token();
-        handle_statement_structure();
+
+        ASTNode *statement_structure = handle_statement_structure();
+
+        if (statement_structure == NULL)
+            return NULL;
+
+        add_child(node, statement_structure);
     }
 
-    return;
+    return node;
 }
 
-void handle_compound_statement()
+ASTNode *handle_compound_statement()
 {
-    if (PARSER_ERROR) return;
+
+    ASTNode *node = create_node("<compound_statement>", NULL);
     if (peek_current_token().type == TOKEN_LBRACE)
     {
-        if (!look_ahead(TOKEN_RBRACE, true, true))
-        {
-            error_handler("Expected: }");
-        }
+        add_child(node, create_node_current_token());
 
         peek_next_token();
 
-        while (!PARSER_ERROR && peek_current_token().type != TOKEN_RBRACE)
+        while (peek_current_token().type != TOKEN_RBRACE && peek_current_token().type != TOKEN_EOF)
         {
-
-            handle_statement();
+            add_child(node, handle_statement());
+        }
+        if (peek_current_token().type != TOKEN_RBRACE)
+        {
+            error_handler("Expected: }");
+            return NULL;
         }
 
-        if (peek_current_token().type == TOKEN_RBRACE)
-        {
-            peek_next_token();
-        }
+        add_child(node, create_node_current_token());
+        peek_next_token();
     }
     else
     {
         error_handler("Expected: {");
+        return NULL;
     }
+
+    return node;
 }
 
-void handle_expr_bool_op()
+ASTNode *handle_expr_bool_op()
 {
-    if (PARSER_ERROR) return;
-    if (peek_current_token().type == TOKEN_EQ 
-        || peek_current_token().type == TOKEN_LE 
-        || peek_current_token().type == TOKEN_GE 
-        || peek_current_token().type == TOKEN_NE
-    )
+
+    ASTNode *node = create_node_current_token();
+
+    if (peek_current_token().type == TOKEN_EQ || peek_current_token().type == TOKEN_LE || peek_current_token().type == TOKEN_GE || peek_current_token().type == TOKEN_NE)
     {
         peek_next_token();
         peek_next_token();
     }
-    else if (peek_current_token().type == TOKEN_GT 
-        || peek_current_token().type == TOKEN_LT 
-        || peek_current_token().type == TOKEN_NOT
-    )
+    else if (peek_current_token().type == TOKEN_GT || peek_current_token().type == TOKEN_LT || peek_current_token().type == TOKEN_NOT)
     {
         peek_next_token();
     }
+
+    return node;
 }
-void handle_expr_bool_rel()
+ASTNode *handle_expr_bool_rel()
 {
-    if (PARSER_ERROR) return;
-    Token next_tok = peek_next_token_no_advance();
+    ASTNode *node = handle_arith_expr();
 
-    if (
-        look_ahead(TOKEN_LE, false, true) 
-        || look_ahead(TOKEN_GE, false, true) 
-        || look_ahead(TOKEN_GT, false, true) 
-        || look_ahead(TOKEN_LT, false, true) 
-        || look_ahead(TOKEN_NOT, false, true) 
-        || look_ahead(TOKEN_NE, false, true) 
-        || look_ahead(TOKEN_EQ, false, true)
-    )
+    if (peek_current_token().type == TOKEN_EQ || peek_current_token().type == TOKEN_LE || peek_current_token().type == TOKEN_GE || peek_current_token().type == TOKEN_NE || peek_current_token().type == TOKEN_GT || peek_current_token().type == TOKEN_LT)
     {
-        handle_arith_expr();
-
-        peek_next_token();
-
-        handle_arith_expr();
+        add_child(node, handle_expr_bool_rel_tail());
     }
-    else
-    {
-        handle_arith_expr();
-    }
+
+    return node;
 }
 
-void handle_expr_bool_not()
+ASTNode *handle_expr_bool_rel_tail()
 {
-    if (PARSER_ERROR) return;
+    ASTNode *node = create_node_current_token();
+
+    peek_next_token();
+
+    add_child(node, handle_arith_expr());
+
+    return node;
+}
+
+ASTNode *handle_expr_bool_not()
+{
+    ASTNode *node = create_node("<expr_bool_not>", NULL);
+
     if (peek_current_token().type == TOKEN_NOT)
     {
+        add_child(node, create_node_current_token());
         peek_next_token();
     }
 
     if (peek_current_token().type == TOKEN_LPAREN)
     {
+        add_child(node, create_node_current_token());
+
         peek_next_token();
 
-        handle_expr_bool();
+        add_child(node, handle_expr_bool());
 
         if (peek_current_token().type == TOKEN_RPAREN)
         {
+            add_child(node, create_node_current_token());
             peek_next_token();
         }
         else
         {
             error_handler("Expected: )");
+            return NULL;
         }
     }
     else
     {
-        handle_expr_bool_rel();
+        add_child(node, handle_expr_bool_rel());
     }
+
+    return node;
 }
 
-void handle_expr_bool_and()
+ASTNode *handle_expr_bool_and()
 {
-    if (PARSER_ERROR) return;
-    handle_expr_bool_not();
+    ASTNode *node = handle_expr_bool_not();
 
-    while (!PARSER_ERROR && peek_current_token().type == TOKEN_AND)
+    while (peek_current_token().type == TOKEN_AND)
     {
+        add_child(node, create_node_current_token());
+
         peek_next_token();
 
-        handle_expr_bool_not();
+        add_child(node, handle_expr_bool_not());
     }
+
+    return node;
 }
 
-void handle_expr_bool_or()
+ASTNode *handle_expr_bool_or()
 {
-    if (PARSER_ERROR) return;
-    handle_expr_bool_and();
 
-    while (!PARSER_ERROR && peek_current_token().type == TOKEN_OR)
+    ASTNode *node = handle_expr_bool_and();
+
+    while (peek_current_token().type == TOKEN_OR)
     {
+        add_child(node, create_node_current_token());
         peek_next_token();
 
-        handle_expr_bool_and();
+        add_child(node, handle_expr_bool_and());
     }
+
+    return node;
 }
 
-void handle_expr_bool()
+ASTNode *handle_expr_bool()
 {
-    if (PARSER_ERROR) return;
-    handle_expr_bool_or();
+
+    ASTNode *node = handle_expr_bool_or();
+
+    return node;
 }
 
-void handle_statement_structure()
+ASTNode *handle_statement_structure()
 {
-    if (PARSER_ERROR) return;
-    if (peek_current_token().type == TOKEN_LPAREN)
+    ASTNode *node = create_node("<statement_structure>", NULL);
+    Token current_token = peek_current_token();
+
+    if (current_token.type == TOKEN_LPAREN)
     {
+        add_child(node, create_node(current_token.value, &current_token));
         peek_next_token();
 
         if (peek_current_token().type == TOKEN_RPAREN)
             error_handler("Expected: bool expression");
 
-        handle_expr_bool();
+        add_child(node, handle_expr_bool());
 
         if (peek_current_token().type == TOKEN_RPAREN)
         {
+            add_child(node, create_node_current_token());
             peek_next_token();
-            handle_compound_statement();
+
+            ASTNode *compound_statement = handle_compound_statement();
+
+            if (compound_statement == NULL)
+                return NULL;
+
+            add_child(node, compound_statement);
         }
         else
         {
             error_handler("Expected: )");
+            return NULL;
         }
     }
     else
     {
-        error_handler("Expected: ;()");
+        error_handler("Expected: ()");
+        return NULL;
     }
+
+    return node;
 }
 
-void handle_assign_expr_tail()
+ASTNode *handle_assign_expr_tail()
 {
-    if (PARSER_ERROR) return;
-    handle_assign_expr();
+    ASTNode *node = handle_reassign_expr();
 
-    while (!PARSER_ERROR && peek_current_token().type == TOKEN_COMMA)
+    while (peek_current_token().type == TOKEN_COMMA)
     {
+        add_child(node, create_node_current_token());
         peek_next_token();
 
-        handle_assign_expr();
+        add_child(node, handle_reassign_expr());
     }
+
+    return node;
 }
 
-void handle_assign_expr_list()
+ASTNode *handle_assign_expr_list()
 {
-    if (PARSER_ERROR) return;
-    handle_assign_expr();
+    ASTNode *node = handle_reassign_expr();
+
     if (peek_current_token().type == TOKEN_COMMA)
     {
+        add_child(node, create_node_current_token());
+
         peek_next_token();
 
-        handle_assign_expr_tail();
+        add_child(node, handle_assign_expr_tail());
     }
+
+    return node;
 }
 
-void handle_for()
+ASTNode *handle_for()
 {
-    if (PARSER_ERROR) return;
+
+    ASTNode *node = create_node("<for>", NULL);
     if (0 == strcmp(peek_current_token().value, FOR))
     {
+        add_child(node, create_node_current_token());
         peek_next_token();
 
         if (peek_current_token().type == TOKEN_LPAREN)
         {
+            add_child(node, create_node_current_token());
             peek_next_token();
 
             if (0 == strcmp(peek_current_token().value, DEF_VAR) || peek_current_token().type == TOKEN_ID)
-                handle_assign_expr_list();
+                add_child(node, handle_assign_expr_list());
 
             if (peek_current_token().type == TOKEN_SEMICOLON)
             {
+                add_child(node, create_node_current_token());
                 peek_next_token();
             }
             else
             {
                 error_handler("Expected: ; after assign expr list in for");
+                return NULL;
             }
 
             if (peek_current_token().type != TOKEN_SEMICOLON)
-                handle_expr_bool();
+                add_child(node, handle_expr_bool());
 
             if (peek_current_token().type == TOKEN_SEMICOLON)
             {
+                add_child(node, create_node_current_token());
                 peek_next_token();
             }
             else
             {
                 error_handler("Expected: ; after boolean expression in for");
+                return NULL;
             }
 
             if (0 == strcmp(peek_current_token().value, DEF_VAR) || peek_current_token().type == TOKEN_ID)
-                handle_assign_expr_list();
+                add_child(node, handle_assign_expr_list());
 
             if (peek_current_token().type == TOKEN_RPAREN)
             {
+                add_child(node, create_node_current_token());
                 peek_next_token();
             }
             else
             {
                 error_handler("Expected: ) after for");
+                return NULL;
             }
 
-            handle_compound_statement();
+            add_child(node, handle_compound_statement());
         }
         else
         {
             error_handler("Expected: ( after for key.");
+            return NULL;
         }
     }
+
+    return node;
 }
 
-void handle_expr()
+ASTNode *handle_expr()
 {
-    if (PARSER_ERROR) return;
-    Token curr_tok = peek_current_token();
-    Token next_tok = peek_next_token_no_advance();
-    bool has_assign_token = look_ahead(TOKEN_ASSIGN, false, false);
 
-    if (0 == strcmp(curr_tok.value, DEF_VAR) 
-        || curr_tok.type == TOKEN_ID 
-        && (has_assign_token || next_tok.type == TOKEN_SEMICOLON))
+    ASTNode *node = NULL;
+    Token curr_tok = peek_current_token();
+
+    if (0 == strcmp(curr_tok.value, DEF_VAR))
     {
-        handle_assign_expr();
+        node = handle_decl_expr();
+    }
+    else if (curr_tok.type == TOKEN_ID)
+    {
+        peek_next_token();
+        node = handle_reassign_expr_tail();
+    }
+
+    return node;
+}
+
+ASTNode *handle_reassign_expr_tail()
+{
+    ASTNode *node = NULL;
+
+    if (peek_current_token().type == TOKEN_ASSIGN)
+    {
+        node = create_node_current_token();
+
+        peek_next_token();
+
+        add_child(node, handle_arith_expr());
     }
     else
     {
-        handle_arith_expr();
+        node = handle_arith_expr_tail();
     }
+
+    return node;
 }
 
-void handle_assign_expr()
+ASTNode *handle_decl_expr()
 {
-    if (PARSER_ERROR) return;
+
+    ASTNode *node = create_node("<assign_expr>", NULL);
+
     if (0 == strcmp(peek_current_token().value, DEF_VAR))
     {
+        add_child(node, create_node_current_token());
+
         peek_next_token();
 
         if (peek_current_token().type != TOKEN_ID)
         {
             error_handler("Expected: IDENTIFIER after let key");
         }
-    }
 
-    if (peek_current_token().type == TOKEN_ID)
-    {
-        handle_array_atom();
+        add_child(node, handle_array_atom());
+
         if (peek_current_token().type == TOKEN_ASSIGN)
         {
+            add_child(node, create_node_current_token());
             peek_next_token();
 
-            handle_expr();
+            add_child(node, handle_arith_expr());
         }
     }
+
+    return node;
 }
 
-void handle_arith_expr()
+ASTNode *handle_reassign_expr()
 {
-    if (PARSER_ERROR) return;
-    handle_term();
-
-    while (!PARSER_ERROR && peek_current_token().type == TOKEN_PLUS || peek_current_token().type == TOKEN_MINUS)
+    ASTNode *node = NULL;
+    if (peek_current_token().type == TOKEN_ID)
     {
+        node = handle_array_atom();
+
+        if (peek_current_token().type != TOKEN_ASSIGN)
+        {
+            error_handler("Expected: ASSIGN after identifier");
+        }
+
+        add_child(node, create_node_current_token());
+
         peek_next_token();
-        handle_term();
+
+        add_child(node, handle_arith_expr());
     }
+
+    return node;
 }
 
-void handle_term()
+ASTNode *handle_arith_expr()
 {
-    if (PARSER_ERROR) return;
-    handle_factor();
 
-    while (!PARSER_ERROR && peek_current_token().type == TOKEN_MUL || peek_current_token().type == TOKEN_DIV)
+    ASTNode *node = handle_term();
+
+    if (peek_current_token().type == TOKEN_PLUS || peek_current_token().type == TOKEN_MINUS)
     {
+        add_child(node, handle_arith_expr_tail());
+    }
+
+    return node;
+}
+
+ASTNode *handle_arith_expr_tail()
+{
+    ASTNode *node = NULL;
+
+    if (peek_current_token().type == TOKEN_PLUS || peek_current_token().type == TOKEN_MINUS)
+    {
+        node = create_node_current_token();
         peek_next_token();
-        handle_factor();
+
+        add_child(node, handle_term());
     }
+
+    if (peek_current_token().type == TOKEN_PLUS || peek_current_token().type == TOKEN_MINUS)
+    {
+        node = handle_arith_expr_tail();
+    }
+
+    return node;
 }
 
-void handle_factor()
+ASTNode *handle_term()
 {
-    if (PARSER_ERROR) return;
-    while (!PARSER_ERROR && peek_current_token().type == TOKEN_PLUS || peek_current_token().type == TOKEN_MINUS)
+
+    ASTNode *node = handle_factor();
+
+    while (peek_current_token().type == TOKEN_MUL || peek_current_token().type == TOKEN_DIV)
     {
+        add_child(node, create_node_current_token());
+
+        peek_next_token();
+
+        add_child(node, handle_factor());
+    }
+
+    return node;
+}
+
+ASTNode *handle_factor()
+{
+
+    ASTNode *node = create_node("<factor>", NULL);
+
+    while (peek_current_token().type == TOKEN_PLUS || peek_current_token().type == TOKEN_MINUS)
+    {
+        add_child(node, create_node_current_token());
         peek_next_token();
     }
 
     if (peek_current_token().type != TOKEN_POW)
     {
-        handle_atom();
+        add_child(node, handle_atom());
     }
 
     if (peek_current_token().type == TOKEN_POW)
     {
-        handle_pow();
+        add_child(node, handle_pow());
     }
+
+    return node;
 }
 
-void handle_items_array()
+ASTNode *handle_items_array()
 {
-    if (PARSER_ERROR) return;
-    handle_atom();
 
-    while (!PARSER_ERROR && peek_current_token().type == TOKEN_COMMA)
+    ASTNode *node = create_node("<items_array>", NULL);
+
+    add_child(node, handle_atom());
+
+    while (peek_current_token().type == TOKEN_COMMA)
     {
+        add_child(node, create_node_current_token());
         peek_next_token();
-        handle_atom();
+        add_child(node, handle_atom());
     }
+
+    return node;
 }
 
-void handle_array()
+ASTNode *handle_array()
 {
-    if (PARSER_ERROR) return;
+
+    ASTNode *node = create_node("<array>", NULL);
+
     if (peek_current_token().type == TOKEN_LSQUARE)
     {
+        add_child(node, create_node_current_token());
         peek_next_token();
 
         if (peek_current_token().type == TOKEN_RSQUARE)
         {
+            add_child(node, create_node_current_token());
             peek_next_token();
-            return;
+            return node;
         }
 
-        handle_items_array();
+        add_child(node, handle_items_array());
 
         if (peek_current_token().type == TOKEN_RSQUARE)
         {
+            add_child(node, create_node_current_token());
             peek_next_token();
         }
         else
         {
             error_handler("Expected: ]");
+            return NULL;
         }
     }
+
+    return node;
 }
 
-void handle_array_atom()
+ASTNode *handle_array_atom()
 {
-    if (PARSER_ERROR) return;
+    ASTNode *node = NULL;
     if (peek_current_token().type == TOKEN_ID)
     {
+        ASTNode *id_node = create_node_current_token();
+        node = id_node;
+
         peek_next_token();
 
         if (peek_current_token().type == TOKEN_LSQUARE)
         {
+            node = create_node("<array_atom>", NULL);
+
+            add_child(node, id_node);
+
             peek_next_token();
 
-            handle_atom();
+            add_child(node, handle_atom());
 
             if (peek_current_token().type == TOKEN_RSQUARE)
             {
+                add_child(node, create_node_current_token());
                 peek_next_token();
             }
             else
             {
                 error_handler("Expected: ]");
+                return NULL;
             }
         }
     }
+
+    return node;
 }
 
-void handle_atom()
+ASTNode *handle_atom()
 {
-    if (PARSER_ERROR) return;
     Token curr_tok = peek_current_token();
+    ASTNode *node = create_node("<atom>", NULL);
+
     if (curr_tok.type == TOKEN_LPAREN)
     {
+        add_child(node, create_node_current_token());
+
         peek_next_token();
 
-        handle_expr();
+        add_child(node, handle_expr());
 
         if (peek_current_token().type == TOKEN_RPAREN)
         {
+            add_child(node, create_node_current_token());
             peek_next_token();
         }
         else
         {
             error_handler("Expected: )");
+            return NULL;
         }
     }
-    else if (curr_tok.type == TOKEN_INTEGER 
-        || curr_tok.type == TOKEN_FLOAT 
-        || curr_tok.type == TOKEN_STRING
-    )
+    else if (curr_tok.type == TOKEN_INTEGER || curr_tok.type == TOKEN_FLOAT || curr_tok.type == TOKEN_STRING)
     {
+        add_child(node, create_node_current_token());
         peek_next_token();
     }
     else if (curr_tok.type == TOKEN_ID)
     {
-        handle_array_atom();
+        add_child(node, handle_array_atom());
     }
     else if (curr_tok.type == TOKEN_LSQUARE)
     {
-        handle_array();
+        add_child(node, handle_array());
     }
     else
     {
         error_handler("Expected: INTEGER | FLOAT | ARRAY | IDENTIFIER | STRING | ( EXPRESSION )");
+        return NULL;
     }
+
+    return node;
 }
 
-void handle_pow()
+ASTNode *handle_pow()
 {
-    if (PARSER_ERROR) return;
+
+    ASTNode *node = NULL;
     if (peek_current_token().type == TOKEN_POW)
     {
+        node = create_node_current_token();
+
         peek_next_token();
 
-        handle_atom();
+        add_child(node, handle_atom());
     }
     else
     {
         error_handler("Expected: ^ pow");
+        return NULL;
     }
+
+    return node;
 }

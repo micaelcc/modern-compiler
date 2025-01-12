@@ -39,10 +39,11 @@ void prompt()
         print_tokens(tokens);
 
         printf("\033[38;5;202m\nStep[Parser] -> \033[0m");
-        PARSER_ERROR = 0;
-        execute_recursive_descendent();
+        ASTNode* node = execute_recursive_descendent();
 
-        if (!PARSER_ERROR) printf("\033[0;32m\t\tOk\033[0m\n");
+        if (node != NULL) {
+            print_ast(node, 0, 1);
+        }
 
     }
 }

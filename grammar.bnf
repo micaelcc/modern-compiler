@@ -9,13 +9,13 @@
 <compound_statement>   ::= "{" <statement>* "}"
 
 <expr>                 ::= <decl_expr>
-                         | <arith_expr>                    
-                         | <reassign_expr>
+                         | <identifier> <reassign_expr_tail>
 
 <arith_expr>           ::= <term> <arith_expr_tail>?
 <arith_expr_tail>      ::= ("+" | "-") <term> <arith_expr_tail>?
 <decl_expr>            ::= "let" <space> <identifier> ("=" <arith_expr>)?
 <reassign_expr>        ::= <identifier> "=" <arith_expr>
+<reassign_expr_tail>   ::= "=" <arith_expr> | <arith_expr_tail>
 
 <array>		   		   ::= "[" <items_array>? "]"
 <items_array>          ::= <atom> <items_array_tail>?

@@ -6,7 +6,6 @@
 #include "../token/token.h"
 #include "../parser/parser.h"
 
-extern int PARSER_ERROR;
 void print_samples();
 void prompt();
 
