@@ -3,6 +3,7 @@
 #include "../errors/syntax-error.h"
 #include "../../ast/ast.h"
 ASTNode *handle_statement();
+ASTNode *handle_program();
 ASTNode *handle_expr();
 ASTNode *handle_reassign_expr();
 ASTNode *handle_arith_expr();
@@ -31,3 +32,4 @@ ASTNode *handle_decl_expr();
 ASTNode *handle_expr_bool_rel_tail();
 ASTNode *handle_reassign_expr_tail();
 ASTNode *handle_elseif();
+ASTNode *create_node_current_token();
