@@ -1,92 +1,82 @@
 # modern-compiler
 Modern Compiler Implementation in C
 
+#### Run 
+
+```bash
+make && ./bin/main
+```
+
 ## Grammar
 
 ```md
-# Syntactic Grammar
+# Syntactic LL(1) Grammar
 
-<program>            ::= <statement>*
-<statement>          ::= <expr> 
-                       | <if_statement> 
-                       | <while_statement>
-<compound_statement> ::= "{" <statement>* "}"
+<program>              ::= <statement>*
+<statement>            ::= <expr> ";"
+                         | <if_statement>
+                         | <while_statement>
+                         | <for_statement>
+<compound_statement>   ::= "{" <statement>* "}"
 
-<expr>               ::= <assign_expr> 
-                       | <arith_expr> 
-<arith_expr>         ::= <term> (("-" | "+") <term>)*
-<assign_expr>        ::= ("let" <space>)? <identifier> "=" <expr> ";"
-<term>               ::= <factor> (("*" | "/") <factor>)*
-<factor>             ::= ("+" | "-")* (<pow> | <atom>)
-<priority_factor>    ::= "(" <arith_expr> ")" | <pow> | <atom>
-<pow>                ::= <priority_factor> "^" <priority_factor>               
-<atom>               ::= <digit>+ 
-                       | <identifier> 
-                       | <string> 
-                       | "(" <expr> ")"
+<expr>                 ::= <decl_expr>
+                         | <identifier> <reassign_expr_tail>
 
-<expr_bool>          ::= <expr_bool_or> 
-                       | "(" <expr_bool_or> ")"
-<expr_bool_or>       ::= <expr_bool_and> (<space> "||" <space> <expr_bool_and>)*
-<expr_bool_and>      ::= <expr_bool_not> (<space> "&&" <space> <expr_bool_not>)*
-<expr_bool_not>      ::= "!" <expr_bool_not> 
-                       | <expr_bool_rel>
-                       | "(" <expr_bool> ")"
-<expr_bool_rel>      ::= <arith_expr> <op_bool> <arith_expr> 
-                       | <atom>
-<op_bool>            ::= "<" 
-                       | ">" 
-                       | "<=" 
-                       | ">=" 
-                       | "!=" 
-                       | "==" 
-                       | "&&" 
-                       | "||"
+<arith_expr>           ::= <term> <arith_expr_tail>?
+<arith_expr_tail>      ::= ("+" | "-") <term> <arith_expr_tail>?
+<decl_expr>            ::= "let" <space> <identifier> ("=" <arith_expr>)?
+<reassign_expr>        ::= <identifier> "=" <arith_expr>
+<reassign_expr_tail>   ::= "=" <arith_expr> | <arith_expr_tail>
 
-<while_statement>    ::= "while" "(" <expr_bool> ")" <compound_statement>
+<array>		   		   ::= "[" <items_array>? "]"
+<items_array>          ::= <atom> <items_array_tail>?
+<items_array_tail>	   ::= "," <atom> <items_array_tail>?
+<term>                 ::= <factor> (("*" | "/") <factor>)*
+<factor>               ::= ("+" | "-")* (<pow> | <atom>)
+<pow>                  ::= <atom> "^" <atom>              
+<atom>                 ::= <digit>+
+                         | <identifier>
+                         | <string>
+                         | "(" <expr> ")"
+                         | <array>
 
-<if_statement>       ::= "if" "(" <expr_bool> ")" <compound_statement> (<else_statement>)*
 
-<else_statement>     ::= "else" (<if_statement> | <compound_statement>)
+<expr_bool>            ::= <expr_bool_or>
+<expr_bool_or>         ::= <expr_bool_and> (<space> "||" <space> <expr_bool_and>)*
+<expr_bool_and>        ::= <expr_bool_not> (<space> "&&" <space> <expr_bool_not>)*
+<expr_bool_not>        ::= "!" <expr_bool_not>
+                         | <expr_bool_rel>
+                         | "(" <expr_bool> ")"                            
+<expr_bool_rel>        ::= <arith_expr> <expr_bool_rel_tail>?
+<expr_bool_rel_tail>   ::= <op_bool> <arith_expr>
+                         
+<op_bool>              ::= "<"
+                         | ">"
+                         | "<="
+                         | ">="
+                         | "!="
+                         | "=="
 
-<identifier>         ::= <letter> <letter_or_digit>*
-<string>             ::= <quote> (<letter_or_digit> | "_" | " ")+ <quote>
-<letter>             ::= [a-z] 
-                       | [A-Z] 
-                       | "_"
-<letter_or_digit>    ::= <letter> 
-                       | <digit>
-<digit>              ::= [0-9]
-<space>              ::= " "
-<new_line>           ::= "\n"
-<quote>              ::= "\""
+<while_statement>      ::= "while" <statement_structure>
+<if_statement>         ::= "if" <statement_structure> <elseif_statement>* <else_statement>?
+<elseif_statement>     ::= "elseif" <statement_structure>
+<else_statement>       ::= "else" <space> (<expr> ";" | <compound_statement>)
+<statement_structure>  ::= "(" <expr_bool> ")" (<expr> ";" | <compound_statement>)
+<for_statement>        ::= "for" "(" <assign_expr_list>? ";" <expr_bool>? ";" <assign_expr_list>? ")"
+                           <compound_statement>
+<assign_expr_list>     ::= <reassign_expr> <assign_expr_tail>?
+<assign_expr_tail>     ::= "," <reassign_expr> <assign_expr_tail>?
+
+<identifier>           ::= <array_item> | <letter> <letter_or_digit>*
+<string>               ::= <quote> (<letter_or_digit> | "_" | " ")+ <quote>
+<array_item>	       ::= <identifier> "[" <arith_expr> "]"
+<letter>               ::= [a-z]
+                         | [A-Z]
+                         | "_"
+<letter_or_digit>      ::= <letter>
+                         | <digit>
+<digit>                ::= [0-9]
+<space>                ::= " "
+<new_line>             ::= "\n"
+<quote>                ::= "\""
 ```
-
-### Constants
-| Const | Meaning | Value |
-|-----------|--------------------|-------------|
-| MINUS     | Minus operator                 | -             |
-| PLUS      | Plus Operator                  | +             |
-| DEF_VAR   | Assign keyword                 | let           |
-| ID        | Identifier                     | var1, var2    |
-| ASSIGN    | Assign operator                | =             |
-| MUL       | Mul operator                   | *             |
-| DIV       | Div operator                   | /             |
-| LPAR      | Left paren                     | (             |
-| RPAR      | Right paren                    | )             |
-| NOT       | Not operator                   | !             |
-| LT        | Less than operator             | <             |
-| GT        | Greater than operator          | >             |
-| LE        | Less than or equal operator    | <=            |
-| GE        | Greater than or equal operator | >=            |
-| NE        | Not equal operator             | !=            |
-| AND       | And operator                   | and           |
-| OR        | Or operator                    | or            |
-| EQ        | Equal operator                 | ==            |
-| WHILE     | While keyword                  | while         |
-| IF        | If keyword                     | if            |
-| ELSE      | Else keyword                   | else          |
-| LBRACE    | Left brace                     | {             |
-| RBRACE    | Right brace                    | }             |
-
-
