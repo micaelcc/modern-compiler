@@ -7,6 +7,12 @@ Modern Compiler Implementation in C
 make && ./bin/main
 ```
 
+#### Tests 
+
+```bash
+make && make test
+```
+
 ## Grammar
 
 ```md
