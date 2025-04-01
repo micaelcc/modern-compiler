@@ -225,3 +225,13 @@ size_t get_current_token_index()
 {
     return current_token_index;
 }
+
+size_t get_number_of_tokens()
+{
+    size_t size = 0;
+
+    for (; TOKENS[size].value != NULL; size++)
+        ;
+
+    return size;
+}

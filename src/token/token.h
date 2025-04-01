@@ -5,7 +5,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include "../constants/constants.h"
-typedef enum {
+typedef enum
+{
     TOKEN_PLUS = 1,
     TOKEN_LPAREN,
     TOKEN_RPAREN,
@@ -40,12 +41,53 @@ typedef enum {
     TOKEN_UNK = -1
 } TokenType;
 
+typedef enum
+{
+    TermIdentifier = 1000,
+    TermDefVar,
+    TermFor,
+    TermIf,
+    TermWhile,
+    TermLbrace,
+    TermRbrace,
+    TermEof,
+    TermAssign,
+    TermSemi,
+    TermMinus,
+    TermPlus,
+    TermFloat,
+    TermString,
+    TermInteger,
+    TermLparen,
+    TermRparen,
+    TermLbracket,
+    TermRbracket,
+    TermOr,
+    TermAnd,
+    TermComma,
+    TermLe,
+    TermLt,
+    TermGe,
+    TermGt,
+    TermNe,
+    TermEq,
+    TermMul,
+    TermDiv,
+    TermPow,
+    TermNot,
+    TermElseIf,
+    TermEpsilon,
+    TermElse
+} TokenSubtype;
+
 typedef struct
 {
     TokenType type;
+    int subtype;
     char *value;
 } Token;
 
+int get_token_subtype(TokenType, char *);
 Token create_token(TokenType, char *);
 Token *push_token(Token, Token *, int *);
 void print_tokens(Token *);

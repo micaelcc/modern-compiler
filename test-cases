@@ -52,3 +52,7 @@ if ((x > 3 && (y < 5 || z > 10)) && !(w == 0)) {
   }
 }if( a  &&  (y<5||z>10) ){}
 //if(x>3&&(y<54)){}
+
+if((IDENTIFIER>INTEGER && (IDENTIFIER<INTEGER||IDENTIFIER>INTEGER)) && !(w==INTEGER)){let result=(x+y)^2;}else {while(z<20){let temp=z*2;z=z+1;}}
+
+if((IDENTIFIER>INTEGER&&(IDENTIFIER<INTEGER||IDENTIFIER>INTEGER))&&!(IDENTIFIER==INTEGER)){let IDENTIFIER=(INTEGER+FLOAT)^INTEGER;}else{while(INTEGER<INTEGER){let IDENTIFIER=IDENTIFIER*INTEGER;IDENTIFIER=IDENTIFIER+INTEGER;}}

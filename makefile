@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -Wall -Wextra -I.
+CFLAGS = -Wall -Wextra -I. $(shell pkg-config --cflags glib-2.0) 
 
 SRC_DIR = src
 BIN_DIR = bin
@@ -8,10 +8,12 @@ SRCS = $(filter-out %_test.c, $(wildcard $(SRC_DIR)/**/*.c)) $(filter-out %_test
 OBJS = $(patsubst $(SRC_DIR)/%.c,$(BIN_DIR)/%.o,$(SRCS))
 
 TARGET = main
+LIBS = $(shell pkg-config --libs glib-2.0) -lm -lcjson
+
 all: $(BIN_DIR)/$(TARGET)
 
 $(BIN_DIR)/$(TARGET): $(OBJS)
-	$(CC) -o $@ $^
+	$(CC) -o $@ $^ $(LIBS)
 
 $(BIN_DIR)/%.o: $(SRC_DIR)/%.c
 	@mkdir -p $(dir $@)
@@ -28,7 +30,7 @@ test:
 
 	@for testfile in $(TESTFILES); do \
 		testname=$$(basename $$testfile .c); \
-		$(CC) $(CFLAGS) $(filter-out bin/main.o, $(OBJS)) $$testfile -o $(BIN_DIR)/$$testname; \
+		$(CC) $(CFLAGS) $(filter-out bin/main.o, $(OBJS)) $$testfile -o $(BIN_DIR)/$$testname $(LIBS); \
 		echo "Run $$testname..."; \
 		if ! $(BIN_DIR)/$$testname; then \
 			failed="$$failed\n$$testname"; \

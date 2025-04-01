@@ -28,5 +28,6 @@ bool is_string(char);
 bool is_arith_operator(char);
 bool is_bool_operator(char, char);
 bool is_symbol(char);
+size_t get_number_of_tokens();
 
 #endif /* __LEX_H__ */

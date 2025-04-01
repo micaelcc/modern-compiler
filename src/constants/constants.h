@@ -48,6 +48,7 @@ extern const char OR[];
 extern const char COMMA[];
 extern const char NOT[];
 
+extern const char *NON_TERMINALS[];
 extern const char *KEYWORDS[];
 
 extern const char *BOOL_OPERATORS[];

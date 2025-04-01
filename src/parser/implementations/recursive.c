@@ -1,4 +1,5 @@
 #include "recursive.h"
+extern int success;
 
 ASTNode *create_node_current_token()
 {
@@ -9,93 +10,37 @@ ASTNode *create_node_current_token()
 
 ASTNode *handle_program()
 {
+    ASTNode *root = create_node("program", NULL);
 
-    ASTNode *root = create_node("<program>", NULL);
-
-    while (0 != strcmp(peek_current_token().value, E0F))
-    {
-        ASTNode *handle_statement_node = handle_statement();
-        if (handle_statement_node == NULL)
-        {
-            return handle_statement_node;
-        }
-        add_child(root, handle_statement_node);
-    }
+    add_child(root, handle_statement_list());
 
     return root;
 }
 
-ASTNode *handle_else()
+ASTNode *handle_statement_list()
 {
-    ASTNode *node = NULL;
+    ASTNode *root = handle_statement();
 
-    if (0 == strcmp(peek_current_token().value, ELSE))
-    {
-        node = create_node_current_token();
-        peek_next_token();
+    add_child(root, handle_statement_list_tail());
 
-        add_child(node, handle_compound_statement());
-    }
-
-    return node;
-}
-
-ASTNode *handle_if()
-{
-
-    ASTNode *node = NULL;
-
-    if (0 == strcmp(peek_current_token().value, IF))
-    {
-        node = create_node_current_token();
-
-        peek_next_token();
-
-        ASTNode *statement_structure = handle_statement_structure();
-
-        if (statement_structure == NULL)
-            return NULL;
-
-        add_child(node, statement_structure);
-
-        while (0 == strcmp(peek_current_token().value, ELSEIF))
-        {
-            add_child(node, handle_elseif());
-        }
-
-        if (0 == strcmp(peek_current_token().value, ELSE))
-        {
-            add_child(node, handle_else());
-        }
-
-        if (0 == strcmp(peek_current_token().value, ELSEIF))
-        {
-            error_handler("Expected: IF before ELSEIF");
-
-            return NULL;
-        }
-    }
-
-    return node;
+    return root;
 }
 
 ASTNode *handle_statement()
 {
 
-    ASTNode *node = NULL;
-
     Token curr_tok = peek_current_token();
-    if (0 == strcmp(curr_tok.value, IF))
+    if (curr_tok.subtype == TermIf)
     {
-        return handle_if();
+        return handle_if_statement();
     }
-    else if (0 == strcmp(curr_tok.value, WHILE))
+    else if (curr_tok.subtype == TermWhile)
     {
-        return handle_while();
+        return handle_while_statement();
     }
-    else if (0 == strcmp(curr_tok.value, FOR))
+    else if (curr_tok.subtype == TermFor)
     {
-        return handle_for();
+        return handle_for_statement();
     }
     else if (curr_tok.type == TOKEN_AND || curr_tok.type == TOKEN_ASSIGN || curr_tok.type == TOKEN_COMMA || curr_tok.type == TOKEN_DIV || curr_tok.type == TOKEN_EQ || curr_tok.type == TOKEN_GE || curr_tok.type == TOKEN_GT || curr_tok.type == TOKEN_LBRACE || curr_tok.type == TOKEN_LE || curr_tok.type == TOKEN_LSQUARE || curr_tok.type == TOKEN_LT || curr_tok.type == TOKEN_MUL || curr_tok.type == TOKEN_NE || curr_tok.type == TOKEN_NOT || curr_tok.type == TOKEN_OR || curr_tok.type == TOKEN_RSQUARE || curr_tok.type == TOKEN_RPAREN || curr_tok.type == TOKEN_RBRACE || curr_tok.type == TOKEN_POW)
     {
@@ -104,15 +49,14 @@ ASTNode *handle_statement()
     }
     else
     {
+        ASTNode *root = handle_expr();
 
-        node = handle_expr();
-
-        Token current_token = peek_current_token();
-        add_child(node, create_node(peek_current_token().value, &current_token));
+        add_child(root, create_node_current_token());
 
         if (peek_current_token().type == TOKEN_SEMICOLON)
         {
             peek_next_token();
+            return root;
         }
         else
         {
@@ -120,648 +64,782 @@ ASTNode *handle_statement()
             return NULL;
         }
     }
-
-    return node;
 }
 
-ASTNode *handle_elseif()
+ASTNode *handle_statement_list_tail()
 {
-    ASTNode *node = create_node_current_token();
-
-    peek_next_token();
-
-    add_child(node, handle_statement_structure());
-
-    return node;
-}
-
-ASTNode *handle_while()
-{
-
-    ASTNode *node = NULL;
-    Token current_token = peek_current_token();
-
-    if (0 == strcmp(current_token.value, WHILE))
+    if (peek_current_token().subtype == TermDefVar || peek_current_token().subtype == TermIdentifier || peek_current_token().subtype == TermWhile || peek_current_token().subtype == TermFor || peek_current_token().subtype == TermIf || peek_current_token().subtype == TermDefVar)
     {
-        node = create_node("<while_statement>", &current_token);
-        peek_next_token();
+        ASTNode *root = handle_statement();
+        add_child(root, handle_statement_list_tail());
 
-        ASTNode *statement_structure = handle_statement_structure();
-
-        if (statement_structure == NULL)
-            return NULL;
-
-        add_child(node, statement_structure);
+        return root;
     }
 
-    return node;
+    return create_node("empty", NULL);
 }
 
 ASTNode *handle_compound_statement()
 {
-
-    ASTNode *node = create_node("<compound_statement>", NULL);
-    if (peek_current_token().type == TOKEN_LBRACE)
+    if (peek_current_token().subtype == TermLbrace)
     {
-        add_child(node, create_node_current_token());
+        ASTNode *root = create_node_current_token();
 
         peek_next_token();
 
-        while (peek_current_token().type != TOKEN_RBRACE && peek_current_token().type != TOKEN_EOF)
-        {
-            add_child(node, handle_statement());
-        }
-        if (peek_current_token().type != TOKEN_RBRACE)
+        add_child(root, handle_statement_list());
+
+        if (peek_current_token().subtype != TermRbrace)
         {
             error_handler("Expected: }");
             return NULL;
         }
+        else
+        {
+            add_child(root, create_node_current_token());
+            peek_next_token();
 
-        add_child(node, create_node_current_token());
-        peek_next_token();
+            return root;
+        }
     }
     else
     {
         error_handler("Expected: {");
         return NULL;
     }
-
-    return node;
-}
-
-ASTNode *handle_expr_bool_op()
-{
-
-    ASTNode *node = create_node_current_token();
-
-    if (peek_current_token().type == TOKEN_EQ || peek_current_token().type == TOKEN_LE || peek_current_token().type == TOKEN_GE || peek_current_token().type == TOKEN_NE)
-    {
-        peek_next_token();
-        peek_next_token();
-    }
-    else if (peek_current_token().type == TOKEN_GT || peek_current_token().type == TOKEN_LT || peek_current_token().type == TOKEN_NOT)
-    {
-        peek_next_token();
-    }
-
-    return node;
-}
-ASTNode *handle_expr_bool_rel()
-{
-    ASTNode *node = handle_arith_expr();
-
-    if (peek_current_token().type == TOKEN_EQ || peek_current_token().type == TOKEN_LE || peek_current_token().type == TOKEN_GE || peek_current_token().type == TOKEN_NE || peek_current_token().type == TOKEN_GT || peek_current_token().type == TOKEN_LT)
-    {
-        add_child(node, handle_expr_bool_rel_tail());
-    }
-
-    return node;
-}
-
-ASTNode *handle_expr_bool_rel_tail()
-{
-    ASTNode *node = create_node_current_token();
-
-    peek_next_token();
-
-    add_child(node, handle_arith_expr());
-
-    return node;
-}
-
-ASTNode *handle_expr_bool_not()
-{
-    ASTNode *node = create_node("<expr_bool_not>", NULL);
-
-    if (peek_current_token().type == TOKEN_NOT)
-    {
-        add_child(node, create_node_current_token());
-        peek_next_token();
-    }
-
-    if (peek_current_token().type == TOKEN_LPAREN)
-    {
-        add_child(node, create_node_current_token());
-
-        peek_next_token();
-
-        add_child(node, handle_expr_bool());
-
-        if (peek_current_token().type == TOKEN_RPAREN)
-        {
-            add_child(node, create_node_current_token());
-            peek_next_token();
-        }
-        else
-        {
-            error_handler("Expected: )");
-            return NULL;
-        }
-    }
-    else
-    {
-        add_child(node, handle_expr_bool_rel());
-    }
-
-    return node;
-}
-
-ASTNode *handle_expr_bool_and()
-{
-    ASTNode *node = handle_expr_bool_not();
-
-    while (peek_current_token().type == TOKEN_AND)
-    {
-        add_child(node, create_node_current_token());
-
-        peek_next_token();
-
-        add_child(node, handle_expr_bool_not());
-    }
-
-    return node;
-}
-
-ASTNode *handle_expr_bool_or()
-{
-
-    ASTNode *node = handle_expr_bool_and();
-
-    while (peek_current_token().type == TOKEN_OR)
-    {
-        add_child(node, create_node_current_token());
-        peek_next_token();
-
-        add_child(node, handle_expr_bool_and());
-    }
-
-    return node;
-}
-
-ASTNode *handle_expr_bool()
-{
-
-    ASTNode *node = handle_expr_bool_or();
-
-    return node;
-}
-
-ASTNode *handle_statement_structure()
-{
-    ASTNode *node = create_node("<statement_structure>", NULL);
-    Token current_token = peek_current_token();
-
-    if (current_token.type == TOKEN_LPAREN)
-    {
-        add_child(node, create_node(current_token.value, &current_token));
-        peek_next_token();
-
-        if (peek_current_token().type == TOKEN_RPAREN)
-            error_handler("Expected: bool expression");
-
-        add_child(node, handle_expr_bool());
-
-        if (peek_current_token().type == TOKEN_RPAREN)
-        {
-            add_child(node, create_node_current_token());
-            peek_next_token();
-
-            ASTNode *compound_statement = handle_compound_statement();
-
-            if (compound_statement == NULL)
-                return NULL;
-
-            add_child(node, compound_statement);
-        }
-        else
-        {
-            error_handler("Expected: )");
-            return NULL;
-        }
-    }
-    else
-    {
-        error_handler("Expected: ()");
-        return NULL;
-    }
-
-    return node;
-}
-
-ASTNode *handle_assign_expr_tail()
-{
-    ASTNode *node = handle_reassign_expr();
-
-    while (peek_current_token().type == TOKEN_COMMA)
-    {
-        add_child(node, create_node_current_token());
-        peek_next_token();
-
-        add_child(node, handle_reassign_expr());
-    }
-
-    return node;
-}
-
-ASTNode *handle_assign_expr_list()
-{
-    ASTNode *node = handle_reassign_expr();
-
-    if (peek_current_token().type == TOKEN_COMMA)
-    {
-        add_child(node, create_node_current_token());
-
-        peek_next_token();
-
-        add_child(node, handle_assign_expr_tail());
-    }
-
-    return node;
-}
-
-ASTNode *handle_for()
-{
-
-    ASTNode *node = create_node("<for>", NULL);
-    if (0 == strcmp(peek_current_token().value, FOR))
-    {
-        add_child(node, create_node_current_token());
-        peek_next_token();
-
-        if (peek_current_token().type == TOKEN_LPAREN)
-        {
-            add_child(node, create_node_current_token());
-            peek_next_token();
-
-            if (0 == strcmp(peek_current_token().value, DEF_VAR) || peek_current_token().type == TOKEN_ID)
-                add_child(node, handle_assign_expr_list());
-
-            if (peek_current_token().type == TOKEN_SEMICOLON)
-            {
-                add_child(node, create_node_current_token());
-                peek_next_token();
-            }
-            else
-            {
-                error_handler("Expected: ; after assign expr list in for");
-                return NULL;
-            }
-
-            if (peek_current_token().type != TOKEN_SEMICOLON)
-                add_child(node, handle_expr_bool());
-
-            if (peek_current_token().type == TOKEN_SEMICOLON)
-            {
-                add_child(node, create_node_current_token());
-                peek_next_token();
-            }
-            else
-            {
-                error_handler("Expected: ; after boolean expression in for");
-                return NULL;
-            }
-
-            if (0 == strcmp(peek_current_token().value, DEF_VAR) || peek_current_token().type == TOKEN_ID)
-                add_child(node, handle_assign_expr_list());
-
-            if (peek_current_token().type == TOKEN_RPAREN)
-            {
-                add_child(node, create_node_current_token());
-                peek_next_token();
-            }
-            else
-            {
-                error_handler("Expected: ) after for");
-                return NULL;
-            }
-
-            add_child(node, handle_compound_statement());
-        }
-        else
-        {
-            error_handler("Expected: ( after for key.");
-            return NULL;
-        }
-    }
-
-    return node;
 }
 
 ASTNode *handle_expr()
 {
-
-    ASTNode *node = NULL;
-    Token curr_tok = peek_current_token();
-
-    if (0 == strcmp(curr_tok.value, DEF_VAR))
+    if (peek_current_token().subtype == TermIdentifier)
     {
-        node = handle_decl_expr();
+        ASTNode *root = handle_identifier();
+
+        add_child(root, handle_reassign_expr_tail());
+
+        return root;
     }
-    else if (curr_tok.type == TOKEN_ID)
+    else if (peek_current_token().subtype == TermDefVar)
     {
-        peek_next_token();
-        node = handle_reassign_expr_tail();
-    }
-
-    return node;
-}
-
-ASTNode *handle_reassign_expr_tail()
-{
-    ASTNode *node = NULL;
-
-    if (peek_current_token().type == TOKEN_ASSIGN)
-    {
-        node = create_node_current_token();
-
-        peek_next_token();
-
-        add_child(node, handle_arith_expr());
+        return handle_decl_expr();
     }
     else
     {
-        node = handle_arith_expr_tail();
+        error_handler("expected: let | id");
+        return NULL;
     }
-
-    return node;
-}
-
-ASTNode *handle_decl_expr()
-{
-
-    ASTNode *node = create_node("<assign_expr>", NULL);
-
-    if (0 == strcmp(peek_current_token().value, DEF_VAR))
-    {
-        add_child(node, create_node_current_token());
-
-        peek_next_token();
-
-        if (peek_current_token().type != TOKEN_ID)
-        {
-            error_handler("Expected: IDENTIFIER after let key");
-        }
-
-        add_child(node, handle_array_atom());
-
-        if (peek_current_token().type == TOKEN_ASSIGN)
-        {
-            add_child(node, create_node_current_token());
-            peek_next_token();
-
-            add_child(node, handle_arith_expr());
-        }
-    }
-
-    return node;
 }
 
 ASTNode *handle_reassign_expr()
 {
-    ASTNode *node = NULL;
-    if (peek_current_token().type == TOKEN_ID)
+    if (peek_current_token().subtype == TermIdentifier)
     {
-        node = handle_array_atom();
+        ASTNode *root = handle_identifier();
 
-        if (peek_current_token().type != TOKEN_ASSIGN)
+        if (peek_current_token().subtype != TermAssign)
         {
-            error_handler("Expected: ASSIGN after identifier");
+            error_handler("expected: = assign");
+            return NULL;
         }
+        else
+        {
+            add_child(root, create_node_current_token());
+            peek_next_token();
 
-        add_child(node, create_node_current_token());
+            add_child(root, handle_arith_expr());
 
+            return root;
+        }
+    }
+    else
+    {
+        error_handler("expected: id");
+        return NULL;
+    }
+}
+
+ASTNode *handle_decl_expr()
+{
+    if (peek_current_token().subtype == TermDefVar)
+    {
+        ASTNode *root = create_node_current_token();
         peek_next_token();
 
-        add_child(node, handle_arith_expr());
+        if (peek_current_token().subtype != TermIdentifier)
+        {
+            error_handler("expected: id");
+            return NULL;
+        }
+        else
+        {
+            add_child(root, handle_identifier());
+            add_child(root, handle_decl_expr_assign());
+
+            return root;
+        }
+    }
+    else
+    {
+        error_handler("expected let");
+        return NULL;
+    }
+}
+
+ASTNode *handle_decl_expr_assign()
+{
+    if (peek_current_token().subtype == TermAssign)
+    {
+        ASTNode *root = create_node_current_token();
+        peek_next_token();
+        add_child(root, handle_arith_expr());
+
+        return root;
     }
 
-    return node;
+    return create_node("empty", NULL);
+}
+
+ASTNode *handle_reassign_expr_tail()
+{
+    if (peek_current_token().subtype == TermAssign)
+    {
+        ASTNode *root = create_node_current_token();
+        peek_next_token();
+
+        add_child(root, handle_arith_expr());
+
+        return root;
+    }
+    else
+    {
+        return handle_arith_expr_tail();
+    }
 }
 
 ASTNode *handle_arith_expr()
 {
+    ASTNode *root = handle_term();
 
-    ASTNode *node = handle_term();
+    add_child(root, handle_arith_expr_tail());
 
-    if (peek_current_token().type == TOKEN_PLUS || peek_current_token().type == TOKEN_MINUS)
-    {
-        add_child(node, handle_arith_expr_tail());
-    }
-
-    return node;
+    return root;
 }
 
 ASTNode *handle_arith_expr_tail()
 {
-    ASTNode *node = NULL;
+    return handle_arith_expr_tail_rest();
+}
 
-    if (peek_current_token().type == TOKEN_PLUS || peek_current_token().type == TOKEN_MINUS)
+ASTNode *handle_arith_expr_tail_rest()
+{
+    if (peek_current_token().subtype == TermPlus)
     {
-        node = create_node_current_token();
+        ASTNode *root = create_node_current_token();
         peek_next_token();
 
-        add_child(node, handle_term());
-    }
+        add_child(root, handle_term());
 
-    if (peek_current_token().type == TOKEN_PLUS || peek_current_token().type == TOKEN_MINUS)
+        add_child(root, handle_arith_expr_tail_rest());
+
+        return root;
+    }
+    else if (peek_current_token().subtype == TermMinus)
     {
-        node = handle_arith_expr_tail();
+        ASTNode *root = create_node_current_token();
+        peek_next_token();
+
+        add_child(root, handle_term());
+
+        add_child(root, handle_arith_expr_tail_rest());
+
+        return root;
     }
 
-    return node;
+    return create_node("empty", NULL);
 }
 
 ASTNode *handle_term()
 {
+    ASTNode *root = handle_factor();
 
-    ASTNode *node = handle_factor();
+    add_child(root, handle_term_list());
 
-    while (peek_current_token().type == TOKEN_MUL || peek_current_token().type == TOKEN_DIV)
+    return root;
+}
+
+ASTNode *handle_term_list()
+{
+    return handle_term_list_tail();
+}
+
+ASTNode *handle_term_list_tail()
+{
+    if (peek_current_token().subtype == TermMul)
     {
-        add_child(node, create_node_current_token());
-
+        ASTNode *root = create_node_current_token();
         peek_next_token();
 
-        add_child(node, handle_factor());
+        add_child(root, handle_factor());
+
+        add_child(root, handle_term_list_tail());
+
+        return root;
+    }
+    else if (peek_current_token().subtype == TermDiv)
+    {
+        ASTNode *root = create_node_current_token();
+        peek_next_token();
+
+        add_child(root, handle_factor());
+
+        add_child(root, handle_term_list_tail());
+
+        return root;
     }
 
-    return node;
+    return create_node("empty", NULL);
 }
 
 ASTNode *handle_factor()
 {
-
-    ASTNode *node = create_node("<factor>", NULL);
-
-    while (peek_current_token().type == TOKEN_PLUS || peek_current_token().type == TOKEN_MINUS)
-    {
-        add_child(node, create_node_current_token());
-        peek_next_token();
-    }
-
-    if (peek_current_token().type != TOKEN_POW)
-    {
-        add_child(node, handle_atom());
-    }
-
-    if (peek_current_token().type == TOKEN_POW)
-    {
-        add_child(node, handle_pow());
-    }
-
-    return node;
+    return handle_factor_rest();
 }
 
-ASTNode *handle_items_array()
+ASTNode *handle_factor_rest()
 {
-
-    ASTNode *node = create_node("<items_array>", NULL);
-
-    add_child(node, handle_atom());
-
-    while (peek_current_token().type == TOKEN_COMMA)
+    if (peek_current_token().subtype == TermPlus)
     {
-        add_child(node, create_node_current_token());
-        peek_next_token();
-        add_child(node, handle_atom());
-    }
-
-    return node;
-}
-
-ASTNode *handle_array()
-{
-
-    ASTNode *node = create_node("<array>", NULL);
-
-    if (peek_current_token().type == TOKEN_LSQUARE)
-    {
-        add_child(node, create_node_current_token());
-        peek_next_token();
-
-        if (peek_current_token().type == TOKEN_RSQUARE)
-        {
-            add_child(node, create_node_current_token());
-            peek_next_token();
-            return node;
-        }
-
-        add_child(node, handle_items_array());
-
-        if (peek_current_token().type == TOKEN_RSQUARE)
-        {
-            add_child(node, create_node_current_token());
-            peek_next_token();
-        }
-        else
-        {
-            error_handler("Expected: ]");
-            return NULL;
-        }
-    }
-
-    return node;
-}
-
-ASTNode *handle_array_atom()
-{
-    ASTNode *node = NULL;
-    if (peek_current_token().type == TOKEN_ID)
-    {
-        ASTNode *id_node = create_node_current_token();
-        node = id_node;
+        ASTNode *root = create_node_current_token();
 
         peek_next_token();
 
-        if (peek_current_token().type == TOKEN_LSQUARE)
-        {
-            node = create_node("<array_atom>", NULL);
+        add_child(root, handle_pow());
 
-            add_child(node, id_node);
-
-            peek_next_token();
-
-            add_child(node, handle_atom());
-
-            if (peek_current_token().type == TOKEN_RSQUARE)
-            {
-                add_child(node, create_node_current_token());
-                peek_next_token();
-            }
-            else
-            {
-                error_handler("Expected: ]");
-                return NULL;
-            }
-        }
+        return root;
     }
-
-    return node;
-}
-
-ASTNode *handle_atom()
-{
-    Token curr_tok = peek_current_token();
-    ASTNode *node = create_node("<atom>", NULL);
-
-    if (curr_tok.type == TOKEN_LPAREN)
+    else if (peek_current_token().subtype == TermMinus)
     {
-        add_child(node, create_node_current_token());
+        ASTNode *root = create_node_current_token();
 
         peek_next_token();
 
-        add_child(node, handle_expr());
+        add_child(root, handle_pow());
 
-        if (peek_current_token().type == TOKEN_RPAREN)
-        {
-            add_child(node, create_node_current_token());
-            peek_next_token();
-        }
-        else
-        {
-            error_handler("Expected: )");
-            return NULL;
-        }
-    }
-    else if (curr_tok.type == TOKEN_INTEGER || curr_tok.type == TOKEN_FLOAT || curr_tok.type == TOKEN_STRING)
-    {
-        add_child(node, create_node_current_token());
-        peek_next_token();
-    }
-    else if (curr_tok.type == TOKEN_ID)
-    {
-        add_child(node, handle_array_atom());
-    }
-    else if (curr_tok.type == TOKEN_LSQUARE)
-    {
-        add_child(node, handle_array());
+        return root;
     }
     else
     {
-        error_handler("Expected: INTEGER | FLOAT | ARRAY | IDENTIFIER | STRING | ( EXPRESSION )");
-        return NULL;
+        return handle_pow();
     }
-
-    return node;
 }
 
 ASTNode *handle_pow()
 {
+    ASTNode *root = handle_atom();
+    add_child(root, handle_pow_rest());
 
-    ASTNode *node = NULL;
-    if (peek_current_token().type == TOKEN_POW)
+    return root;
+}
+
+ASTNode *handle_pow_rest()
+{
+    if (peek_current_token().subtype == TermPow)
     {
-        node = create_node_current_token();
+        ASTNode *root = create_node_current_token();
 
         peek_next_token();
 
-        add_child(node, handle_atom());
+        add_child(root, handle_pow());
+
+        return root;
+    }
+
+    return create_node("empty", NULL);
+}
+
+ASTNode *handle_atom()
+{
+    if (peek_current_token().subtype == TermIdentifier)
+    {
+        return handle_identifier();
+    }
+    else if (peek_current_token().subtype == TermInteger || peek_current_token().subtype == TermFloat || peek_current_token().subtype == TermString)
+    {
+        ASTNode *root = create_node_current_token();
+
+        peek_next_token();
+
+        return root;
+    }
+    else if (peek_current_token().subtype == TermLparen)
+    {
+        ASTNode *root = create_node_current_token();
+
+        peek_next_token();
+
+        add_child(root, handle_arith_expr());
+
+        if (peek_current_token().subtype != TermRparen)
+        {
+            error_handler("expected: )");
+            return NULL;
+        }
+        else
+        {
+            add_child(root, create_node_current_token());
+            peek_next_token();
+            return root;
+        }
+    }
+    else if (peek_current_token().subtype == TermLbracket)
+    {
+        return handle_array();
     }
     else
     {
-        error_handler("Expected: ^ pow");
+        error_handler("expected Atom");
         return NULL;
     }
+}
 
-    return node;
+ASTNode *handle_array()
+{
+    if (peek_current_token().subtype == TermLbracket)
+    {
+        ASTNode *root = create_node_current_token();
+
+        peek_next_token();
+        add_child(root, handle_items_array());
+
+        if (peek_current_token().subtype != TermRbracket)
+        {
+            error_handler("expected: []");
+            return NULL;
+        }
+        else
+        {
+            add_child(root, create_node_current_token());
+            peek_next_token();
+
+            return root;
+        }
+    }
+    else
+    {
+        error_handler("expected: ]");
+        return NULL;
+    }
+}
+
+ASTNode *handle_items_array()
+{
+    if (peek_current_token().subtype == TermLbracket || peek_current_token().subtype == TermLparen || peek_current_token().subtype == TermInteger || peek_current_token().subtype == TermFloat || peek_current_token().subtype == TermString || peek_current_token().subtype == TermIdentifier)
+    {
+        ASTNode *root = handle_atom();
+
+        add_child(root, handle_items_array_tail());
+
+        return root;
+    }
+
+    return create_node("empty", NULL);
+}
+
+ASTNode *handle_items_array_tail()
+{
+    if (peek_current_token().subtype == TermComma)
+    {
+        ASTNode *root = create_node_current_token();
+
+        peek_next_token();
+
+        add_child(root, handle_atom());
+
+        add_child(root, handle_items_array_tail());
+
+        return root;
+    }
+
+    return create_node("empty", NULL);
+}
+
+ASTNode *handle_expr_bool()
+{
+    return handle_expr_bool_or();
+}
+
+ASTNode *handle_expr_bool_or()
+{
+    ASTNode *root = handle_expr_bool_and();
+
+    add_child(root, handle_expr_bool_or_rest());
+
+    return root;
+}
+
+ASTNode *handle_expr_bool_or_rest()
+{
+    if (peek_current_token().subtype == TermOr)
+    {
+        ASTNode *root = create_node_current_token();
+
+        peek_next_token();
+
+        add_child(root, handle_expr_bool_and());
+
+        add_child(root, handle_expr_bool_and_tail());
+
+        return root;
+    }
+
+    return create_node("empty", NULL);
+}
+
+ASTNode *handle_expr_bool_and()
+{
+    ASTNode *root = handle_expr_bool_not();
+
+    add_child(root, handle_expr_bool_and_tail());
+
+    return root;
+}
+
+ASTNode *handle_expr_bool_and_tail()
+{
+    if (peek_current_token().subtype == TermAnd)
+    {
+        ASTNode *root = create_node_current_token();
+
+        peek_next_token();
+
+        add_child(root, handle_expr_bool_not());
+
+        add_child(root, handle_expr_bool_and_tail());
+
+        return root;
+    }
+
+    return create_node("empty", NULL);
+}
+
+ASTNode *handle_expr_bool_not()
+{
+    if (peek_current_token().subtype == TermNot)
+    {
+        ASTNode *root = create_node_current_token();
+
+        peek_next_token();
+
+        add_child(root, handle_expr_bool_not());
+        return root;
+    }
+    else
+    {
+        return handle_expr_bool_rel();
+    }
+}
+
+ASTNode *handle_expr_bool_rel()
+{
+    ASTNode *root = handle_arith_expr();
+
+    add_child(root, handle_expr_bool_rel_tail());
+
+    return root;
+}
+
+ASTNode *handle_expr_bool_rel_tail()
+{
+    if (peek_current_token().subtype == TermLe || peek_current_token().subtype == TermGe || peek_current_token().subtype == TermGt || peek_current_token().subtype == TermLt || peek_current_token().subtype == TermNe || peek_current_token().subtype == TermEq)
+    {
+        ASTNode *root = create_node_current_token();
+
+        peek_next_token();
+
+        add_child(root, handle_arith_expr());
+
+        return root;
+    }
+
+    return create_node("empty", NULL);
+}
+
+ASTNode *handle_expr_bool_rel_factor()
+{
+    return handle_arith_expr();
+}
+
+ASTNode *handle_while_statement()
+{
+    if (peek_current_token().subtype == TermWhile)
+    {
+        ASTNode *root = create_node_current_token();
+
+        peek_next_token();
+
+        add_child(root, handle_statement_structure());
+
+        return root;
+    }
+
+    return create_node("empty", NULL);
+}
+
+ASTNode *handle_if_statement()
+{
+    if (peek_current_token().subtype == TermIf)
+    {
+        ASTNode *root = create_node_current_token();
+
+        peek_next_token();
+
+        add_child(root, handle_statement_structure());
+        add_child(root, handle_else_if_statement_list());
+
+        add_child(root, handle_else_statement());
+
+        return root;
+    }
+
+    return create_node("empty", NULL);
+}
+
+ASTNode *handle_else_if_statement_list()
+{
+    return handle_elseif_statement_tail();
+}
+
+ASTNode *handle_else_if_statement()
+{
+    if (peek_current_token().subtype == TermElseIf)
+    {
+        ASTNode *root = create_node_current_token();
+
+        peek_next_token();
+
+        add_child(root, handle_statement_structure());
+
+        return root;
+    }
+
+    return create_node("empty", NULL);
+}
+
+ASTNode *handle_elseif_statement_tail()
+{
+    if (peek_current_token().subtype == TermElseIf)
+    {
+        ASTNode *root = handle_else_if_statement();
+
+        add_child(root, handle_elseif_statement_tail());
+
+        return root;
+    }
+
+    return create_node("empty", NULL);
+}
+
+ASTNode *handle_else_statement()
+{
+    if (peek_current_token().subtype == TermElse)
+    {
+        ASTNode *root = create_node_current_token();
+
+        peek_next_token();
+
+        add_child(root, handle_compound_statement());
+
+        return root;
+    }
+
+    return create_node("empty", NULL);
+}
+
+ASTNode *handle_statement_structure()
+{
+    if (peek_current_token().subtype == TermLparen)
+    {
+        ASTNode *root = create_node_current_token();
+
+        peek_next_token();
+
+        add_child(root, handle_expr_bool());
+
+        if (peek_current_token().subtype != TermRparen)
+        {
+            error_handler("expected:)");
+            return NULL;
+        }
+        else
+        {
+            add_child(root, create_node_current_token());
+
+            peek_next_token();
+
+            add_child(root, handle_compound_statement());
+
+            return root;
+        }
+    }
+    else
+    {
+        error_handler("expected :(");
+        return NULL;
+    }
+}
+
+ASTNode *handle_for_statement()
+{
+    if (peek_current_token().subtype == TermFor)
+    {
+        ASTNode *root = create_node_current_token();
+
+        peek_next_token();
+
+        if (peek_current_token().subtype != TermLparen)
+        {
+            error_handler("expected: ()");
+            return NULL;
+        }
+        else
+        {
+            add_child(root, create_node_current_token());
+
+            peek_next_token();
+
+            add_child(root, handle_assign_expr_list());
+
+            if (peek_current_token().subtype != TermSemi)
+            {
+                error_handler("expected: ; 2");
+                return NULL;
+            }
+            else
+            {
+                add_child(root, create_node_current_token());
+
+                peek_next_token();
+                add_child(root, handle_for_expr_bool());
+                if (peek_current_token().subtype != TermSemi)
+                {
+                    error_handler("expected: ; 3");
+                    return NULL;
+                }
+                else
+                {
+                    add_child(root, create_node_current_token());
+
+                    peek_next_token();
+
+                    add_child(root, handle_assign_expr_list());
+
+                    if (peek_current_token().subtype != TermRparen)
+                    {
+                        error_handler("expected: )");
+                        return NULL;
+                    }
+                    else
+                    {
+                        add_child(root, create_node_current_token());
+
+                        peek_next_token();
+                        add_child(root, handle_compound_statement());
+
+                        return root;
+                    }
+                }
+            }
+        }
+    }
+
+    return create_node("empty", NULL);
+}
+
+ASTNode *handle_for_expr_bool()
+{
+    if (peek_current_token().subtype == TermNot || peek_current_token().subtype == TermLbracket || peek_current_token().subtype == TermLparen || peek_current_token().subtype == TermInteger || peek_current_token().subtype == TermFloat || peek_current_token().subtype == TermString || peek_current_token().subtype == TermIdentifier)
+    {
+        return handle_expr_bool();
+    }
+
+    return create_node("empty", NULL);
+}
+
+ASTNode *handle_assign_expr_list()
+{
+    if (peek_current_token().subtype == TermIdentifier)
+    {
+        ASTNode *root = handle_reassign_expr();
+
+        add_child(root, handle_assign_expr_tail());
+
+        return root;
+    }
+
+    return create_node("empty", NULL);
+}
+
+ASTNode *handle_assign_expr_tail()
+{
+    if (peek_current_token().subtype == TermComma)
+    {
+        ASTNode *root = create_node_current_token();
+
+        peek_next_token();
+
+        add_child(root, handle_reassign_expr());
+
+        add_child(root, handle_assign_expr_tail());
+
+        return root;
+    }
+
+    return create_node("empty", NULL);
+}
+
+ASTNode *handle_identifier()
+{
+    if (peek_current_token().subtype == TermIdentifier)
+    {
+        ASTNode *root = create_node_current_token();
+
+        peek_next_token();
+
+        add_child(root, handle_identifier_array());
+
+        return root;
+    }
+    else
+    {
+        error_handler("expected id");
+        return NULL;
+    }
+}
+
+ASTNode *handle_identifier_array()
+{
+    if (peek_current_token().subtype == TermLbracket)
+    {
+        ASTNode *root = create_node_current_token();
+
+        peek_next_token();
+
+        add_child(root, handle_arith_expr());
+
+        if (peek_current_token().subtype != TermRbracket)
+        {
+            error_handler("expected arrauyyp");
+            return NULL;
+        }
+        else
+        {
+            add_child(root, create_node_current_token());
+
+            peek_next_token();
+
+            return root;
+        }
+    }
+
+    return create_node("empty", NULL);
 }
