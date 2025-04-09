@@ -91,5 +91,6 @@ int get_token_subtype(TokenType, char *);
 Token create_token(TokenType, char *);
 Token *push_token(Token, Token *, int *);
 void print_tokens(Token *);
+Token get_undef_token();
 
 #endif /* __TOKEN_H__ */

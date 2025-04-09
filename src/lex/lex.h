@@ -4,6 +4,7 @@
 #include <stddef.h>
 #include <ctype.h>
 #include <stdbool.h>
+#include <stdlib.h>
 #include "../token/token.h"
 #include "../utils/string-utils.h"
 #include "../constants/constants.h"

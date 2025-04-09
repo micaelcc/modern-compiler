@@ -1,69 +1,28 @@
-#include <stdlib.h>
-#include <stdio.h>
+#include <stdbool.h>
 #include <glib.h>
-#include "cjson/cJSON.h"
+#include "../table/table.h"
 #include "../../ast/ast.h"
 #include "../../utils/string-utils.h"
 #include "../../token/token.h"
 #include "../../lex/lex.h"
-#define END_OF_TABLE_ITEM -1
-enum NonTerminals
+
+typedef struct
 {
-    NonTermProgram = 0,
-    NonTermCompoundStatement,
-    NonTermStatementList,
-    NonTermStatementListTail,
-    NonTermStatement,
-    NonTermExpr,
-    NonTermReassignExpr,
-    NonTermDeclExpr,
-    NonTermDeclExprAssign,
-    NonTermReassignExprTail,
-    NonTermArithExpr,
-    NonTermArithExprTail,
-    NonTermArithExprTailRest,
-    NonTermTerm,
-    NonTermTermList,
-    NonTermTermListTail,
-    NonTermFactor,
-    NonTermFactorRest,
-    NonTermPow,
-    NonTermPowRest,
-    NonTermAtom,
-    NonTermArray,
-    NonTermItemsArray,
-    NonTermItemsArrayTail,
-    NonTermExprBool,
-    NonTermExprBoolOr,
-    NonTermExprBoolOrRest,
-    NonTermExprBoolAnd,
-    NonTermExprBoolAndTail,
-    NonTermExprBoolNot,
-    NonTermExprBoolRel,
-    NonTermExprBoolRelTail,
-    NonTermExprBoolRelFactor,
-    NonTermOpBool,
-    NonTermWhileStatement,
-    NonTermIfStatement,
-    NonTermElseifStatementList,
-    NonTermElseifStatement,
-    NonTermElseifStatementTail,
-    NonTermElseStatement,
-    NonTermStatementStructure,
-    NonTermForStatement,
-    NonTermForExprBool,
-    NonTermAssignExprList,
-    NonTermAssignExprTail,
-    NonTermIdentifier,
-    NonTermIdentifierArray,
-};
+    bool _let;
+    bool _reassign;
+    bool _array;
+    bool _if;
+    bool _for;
+    bool _elseif;
+    bool _else;
+    bool _while;
+    bool _for_initial_assignments;
+    bool _for_condition;
+    bool _for_final_assignments;
+} IsParsingFlags;
 
 ASTNode *parser_non_recurs();
-void *load_file();
-void set_table();
-int terminal_str_to_enum(const char *);
-int non_terminal_str_to_enum(const char *);
-char *terminal_enum_to_str(int);
-char *non_terminal_enum_to_str(int);
-void *load_file();
-int *search_table_json(enum NonTerminals, int);
+int precedence(TokenSubtype);
+bool is_high_precedence(Token, gpointer);
+void perform_ast_node(int, Token, gpointer, gpointer);
+void handle_ast(int, Token, Token *, IsParsingFlags *, gpointer, gpointer, gpointer, ASTNode *, ASTNode *);

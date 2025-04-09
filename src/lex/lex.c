@@ -24,7 +24,7 @@ void make_tokens(const char value[])
         }
         else if (is_end_of_statement(c))
         {
-            lexema = malloc(2 * sizeof(char));
+            lexema = (char *)malloc(2 * sizeof(char));
             sprintf(lexema, "%c", c);
             advance_next_char(value, &row, &column, &current);
         }
@@ -45,7 +45,7 @@ void make_tokens(const char value[])
         }
         else if (is_arith_operator(c))
         {
-            lexema = malloc(2 * sizeof(char));
+            lexema = (char *)malloc(2 * sizeof(char));
             sprintf(lexema, "%c", c);
             advance_next_char(value, &row, &column, &current);
         }
@@ -55,7 +55,7 @@ void make_tokens(const char value[])
         }
         else if (is_symbol(c))
         {
-            lexema = malloc(2 * sizeof(char));
+            lexema = (char *)malloc(2 * sizeof(char));
 
             sprintf(lexema, "%c", c);
 

@@ -232,3 +232,14 @@ int get_token_subtype(TokenType tt, char *value)
         return -1;
     }
 }
+
+Token get_undef_token()
+{
+    Token tok;
+
+    tok.subtype = -1;
+    tok.type = TOKEN_UNK;
+    tok.value = NULL;
+
+    return tok;
+}

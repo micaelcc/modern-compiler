@@ -27,7 +27,6 @@ ASTNode *execute_recursive_descendent()
     printf("\t\tExecution Time (ASDRP): %f milliseconds\n", execution_time);
     long memory_used2 = usage_after.ru_maxrss - usage_before.ru_maxrss;
     printf("\t\tMemory consumption (ASDRP): %ld KB\n", memory_used2);
-
     current_token_index = 0;
 
     return ast_node;
@@ -43,7 +42,7 @@ ASTNode *execute_non_recursive()
 
     struct rusage usage_before, usage_after;
 
-    printf("\033\t\t[0;34mExecuting Table-Driven Parser...\033[0m\n");
+    printf("\033[0;34mExecuting Table-Driven Parser...\033[0m\n");
     getrusage(RUSAGE_SELF, &usage_before);
     start = clock();
 
@@ -60,7 +59,6 @@ ASTNode *execute_non_recursive()
 
     long memory_used = usage_after.ru_maxrss - usage_before.ru_maxrss;
     printf("\t\tMemory consumption (ASTP): %ld KB\n", memory_used);
-
     current_token_index = 0;
 
     return ast_node;
