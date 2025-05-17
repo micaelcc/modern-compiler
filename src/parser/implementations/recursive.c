@@ -12,18 +12,15 @@ ASTNode *handle_program()
 {
     ASTNode *root = create_node("Program", get_undef_token());
 
-    add_child(root, handle_statement_list());
+    handle_statement_list(root);
 
     return root;
 }
 
-ASTNode *handle_statement_list()
+ASTNode *handle_statement_list(ASTNode *root)
 {
-    ASTNode *root = handle_statement();
-
-    add_child(root, handle_statement_list_tail());
-
-    return root;
+    add_child(root, handle_statement());
+    return handle_statement_list_tail(root);
 }
 
 ASTNode *handle_statement()
@@ -65,17 +62,16 @@ ASTNode *handle_statement()
     return root;
 }
 
-ASTNode *handle_statement_list_tail()
+ASTNode *handle_statement_list_tail(ASTNode *root)
 {
     if (peek_current_token().subtype == TermIdentifier || peek_current_token().subtype == TermWhile || peek_current_token().subtype == TermFor || peek_current_token().subtype == TermIf || peek_current_token().subtype == TermDefVar)
     {
-        ASTNode *root = handle_statement();
-        add_child(root, handle_statement_list_tail());
+        add_child(root, handle_statement());
 
-        return root;
+        return handle_statement_list_tail(root);
     }
 
-    return NULL;
+    return root;
 }
 
 ASTNode *handle_compound_statement()
@@ -86,7 +82,7 @@ ASTNode *handle_compound_statement()
     {
         peek_next_token();
 
-        add_child(block_node, handle_statement_list());
+        handle_statement_list(block_node);
 
         if (peek_current_token().subtype != TermRbrace)
         {
@@ -111,9 +107,7 @@ ASTNode *handle_expr()
     Token curr_tok = peek_current_token();
     if (curr_tok.subtype == TermIdentifier)
     {
-        node = handle_identifier();
-
-        add_child(node, handle_reassign_expr_tail());
+        node = handle_reassign_expr_tail(handle_identifier());
     }
     else if (peek_current_token().subtype == TermDefVar)
     {
@@ -132,7 +126,8 @@ ASTNode *handle_reassign_expr()
 {
     if (peek_current_token().subtype == TermIdentifier)
     {
-        ASTNode *root = handle_identifier();
+        ASTNode *r = create_node("=", get_undef_token());
+        add_child(r, handle_identifier());
 
         if (peek_current_token().subtype != TermAssign)
         {
@@ -141,12 +136,11 @@ ASTNode *handle_reassign_expr()
         }
         else
         {
-            add_child(root, create_node_current_token());
             peek_next_token();
 
-            add_child(root, handle_arith_expr());
+            add_child(r, handle_arith_expr());
 
-            return root;
+            return r;
         }
     }
     else
@@ -197,13 +191,18 @@ ASTNode *handle_decl_expr_assign()
     return node;
 }
 
-ASTNode *handle_reassign_expr_tail()
+ASTNode *handle_reassign_expr_tail(ASTNode *lhs)
 {
     if (peek_current_token().subtype == TermAssign)
     {
+        ASTNode *root = create_node_current_token();
+
         peek_next_token();
 
-        return handle_arith_expr();
+        add_child(root, lhs);
+        add_child(root, handle_arith_expr());
+
+        return root;
     }
 
     return handle_arith_expr_tail();
@@ -211,19 +210,15 @@ ASTNode *handle_reassign_expr_tail()
 
 ASTNode *handle_arith_expr()
 {
-    ASTNode *root = create_node("ArithExpr", get_undef_token());
-    add_child(root, handle_term());
-    add_child(root, handle_arith_expr_tail());
-
-    return root;
+    return handle_arith_expr_tail(handle_term());
 }
 
-ASTNode *handle_arith_expr_tail()
+ASTNode *handle_arith_expr_tail(ASTNode *term)
 {
-    return handle_arith_expr_tail_rest();
+    return handle_arith_expr_tail_rest(term);
 }
 
-ASTNode *handle_arith_expr_tail_rest()
+ASTNode *handle_arith_expr_tail_rest(ASTNode *lhs)
 {
     Token curr_tok = peek_current_token();
     if (curr_tok.subtype == TermPlus || curr_tok.subtype == TermMinus)
@@ -231,31 +226,33 @@ ASTNode *handle_arith_expr_tail_rest()
         ASTNode *root = create_node_current_token();
         peek_next_token();
 
-        add_child(root, handle_term());
+        ASTNode *rhs = handle_term();
 
-        add_child(root, handle_arith_expr_tail_rest());
+        add_child(root, lhs);
+        add_child(root, rhs);
 
-        return root;
+        return handle_arith_expr_tail_rest(root);
     }
 
-    return NULL;
+    return lhs;
 }
 
 ASTNode *handle_term()
 {
-    ASTNode *root = handle_factor();
+    return handle_term_list(handle_factor());
+    // ASTNode *root = handle_factor();
 
-    add_child(root, handle_term_list());
+    // add_child(root, handle_term_list());
 
-    return root;
+    // return root;
 }
 
-ASTNode *handle_term_list()
+ASTNode *handle_term_list(ASTNode *lhs)
 {
-    return handle_term_list_tail();
+    return handle_term_list_tail(lhs);
 }
 
-ASTNode *handle_term_list_tail()
+ASTNode *handle_term_list_tail(ASTNode *lhs)
 {
     Token curr_tok = peek_current_token();
     if (curr_tok.subtype == TermMul || curr_tok.subtype == TermDiv)
@@ -263,14 +260,14 @@ ASTNode *handle_term_list_tail()
         ASTNode *root = create_node_current_token();
         peek_next_token();
 
-        add_child(root, handle_factor());
+        ASTNode *rhs = handle_factor();
+        add_child(root, lhs);
+        add_child(root, rhs);
 
-        add_child(root, handle_term_list_tail());
-
-        return root;
+        return handle_term_list_tail(root);
     }
 
-    return NULL;
+    return lhs;
 }
 
 ASTNode *handle_factor()
@@ -281,6 +278,7 @@ ASTNode *handle_factor()
 ASTNode *handle_factor_rest()
 {
     Token curr_tok = peek_current_token();
+
     if (curr_tok.subtype == TermPlus || curr_tok.subtype == TermMinus)
     {
         ASTNode *root = create_node_current_token();
@@ -297,13 +295,10 @@ ASTNode *handle_factor_rest()
 
 ASTNode *handle_pow()
 {
-    ASTNode *root = handle_atom();
-    add_child(root, handle_pow_rest());
-
-    return root;
+    return handle_pow_rest(handle_atom());
 }
 
-ASTNode *handle_pow_rest()
+ASTNode *handle_pow_rest(ASTNode *lhs)
 {
     if (peek_current_token().subtype == TermPow)
     {
@@ -311,12 +306,13 @@ ASTNode *handle_pow_rest()
 
         peek_next_token();
 
+        add_child(root, lhs);
         add_child(root, handle_pow());
 
         return root;
     }
 
-    return NULL;
+    return lhs;
 }
 
 ASTNode *handle_atom()
@@ -368,10 +364,10 @@ ASTNode *handle_array()
 {
     if (peek_current_token().subtype == TermLbracket)
     {
-        ASTNode *root = create_node_current_token();
+        ASTNode *root = create_node("[]", peek_current_token());
 
         peek_next_token();
-        add_child(root, handle_items_array());
+        handle_items_array(root);
 
         if (peek_current_token().subtype != TermRbracket)
         {
@@ -380,7 +376,6 @@ ASTNode *handle_array()
         }
         else
         {
-            add_child(root, create_node_current_token());
             peek_next_token();
 
             return root;
@@ -393,36 +388,30 @@ ASTNode *handle_array()
     }
 }
 
-ASTNode *handle_items_array()
+ASTNode *handle_items_array(ASTNode *root)
 {
     if (peek_current_token().subtype == TermLbracket || peek_current_token().subtype == TermLparen || peek_current_token().subtype == TermInteger || peek_current_token().subtype == TermFloat || peek_current_token().subtype == TermString || peek_current_token().subtype == TermIdentifier)
     {
-        ASTNode *root = handle_atom();
+        add_child(root, handle_atom());
 
-        add_child(root, handle_items_array_tail());
-
-        return root;
+        return handle_items_array_tail(root);
     }
 
-    return NULL;
+    return root;
 }
 
-ASTNode *handle_items_array_tail()
+ASTNode *handle_items_array_tail(ASTNode *root)
 {
     if (peek_current_token().subtype == TermComma)
     {
-        ASTNode *root = create_node_current_token();
-
         peek_next_token();
 
         add_child(root, handle_atom());
 
-        add_child(root, handle_items_array_tail());
-
-        return root;
+        return handle_items_array_tail(root);
     }
 
-    return NULL;
+    return root;
 }
 
 ASTNode *handle_expr_bool()
@@ -432,96 +421,73 @@ ASTNode *handle_expr_bool()
 
 ASTNode *handle_expr_bool_or()
 {
-    ASTNode *root = handle_expr_bool_and();
-
-    add_child(root, handle_expr_bool_or_rest());
-
-    return root;
+    return handle_expr_bool_or_rest(handle_expr_bool_and());
 }
 
-ASTNode *handle_expr_bool_or_rest()
+ASTNode *handle_expr_bool_or_rest(ASTNode *lhs)
 {
     if (peek_current_token().subtype == TermOr)
     {
         ASTNode *root = create_node_current_token();
-
         peek_next_token();
-
-        add_child(root, handle_expr_bool_and());
-
-        add_child(root, handle_expr_bool_or_rest());
-
+        ASTNode *rhs = handle_expr_bool_and();
+        add_child(root, lhs);
+        add_child(root, handle_expr_bool_or_rest(rhs));
         return root;
     }
-
-    return NULL;
+    return lhs;
 }
 
 ASTNode *handle_expr_bool_and()
 {
-    ASTNode *root = handle_expr_bool_not();
-
-    add_child(root, handle_expr_bool_and_tail());
-
-    return root;
+    ASTNode *lhs = handle_expr_bool_not();
+    return handle_expr_bool_and_tail(lhs);
 }
 
-ASTNode *handle_expr_bool_and_tail()
+ASTNode *handle_expr_bool_and_tail(ASTNode *lhs)
 {
     if (peek_current_token().subtype == TermAnd)
     {
         ASTNode *root = create_node_current_token();
-
         peek_next_token();
-
-        add_child(root, handle_expr_bool_not());
-
-        add_child(root, handle_expr_bool_and_tail());
-
+        ASTNode *rhs = handle_expr_bool_not();
+        add_child(root, lhs);
+        add_child(root, handle_expr_bool_and_tail(rhs));
         return root;
     }
-
-    return NULL;
+    return lhs;
 }
-
 ASTNode *handle_expr_bool_not()
 {
     if (peek_current_token().subtype == TermNot)
     {
         ASTNode *root = create_node_current_token();
-
         peek_next_token();
-
         add_child(root, handle_expr_bool_not());
         return root;
     }
-
     return handle_expr_bool_rel();
 }
 
 ASTNode *handle_expr_bool_rel()
 {
-    ASTNode *root = handle_arith_expr();
-
-    add_child(root, handle_expr_bool_rel_tail());
-
-    return root;
+    ASTNode *lhs = handle_arith_expr();
+    return handle_expr_bool_rel_tail(lhs);
 }
 
-ASTNode *handle_expr_bool_rel_tail()
+ASTNode *handle_expr_bool_rel_tail(ASTNode *lhs)
 {
-    if (peek_current_token().subtype == TermLe || peek_current_token().subtype == TermGe || peek_current_token().subtype == TermGt || peek_current_token().subtype == TermLt || peek_current_token().subtype == TermNe || peek_current_token().subtype == TermEq)
+    Token curr_tok = peek_current_token();
+    if (curr_tok.subtype == TermLe || curr_tok.subtype == TermGe || curr_tok.subtype == TermGt || curr_tok.subtype == TermLt || curr_tok.subtype == TermNe || curr_tok.subtype == TermEq)
     {
         ASTNode *root = create_node_current_token();
-
         peek_next_token();
-
-        add_child(root, handle_arith_expr());
-
+        ASTNode *rhs = handle_arith_expr();
+        add_child(root, lhs);
+        add_child(root, rhs);
         return root;
     }
-
-    return NULL;
+    return lhs;
 }
 
 ASTNode *handle_expr_bool_rel_factor()
@@ -553,10 +519,10 @@ ASTNode *handle_if_statement()
 
         peek_next_token();
 
-        add_child(root, handle_statement_structure());
-        add_child(root, handle_else_if_statement_list());
+        handle_statement_structure(root);
+        handle_else_if_statement_list(root);
 
-        add_child(root, handle_else_statement());
+        handle_else_statement(root);
 
         return root;
     }
@@ -564,9 +530,9 @@ ASTNode *handle_if_statement()
     return NULL;
 }
 
-ASTNode *handle_else_if_statement_list()
+ASTNode *handle_else_if_statement_list(ASTNode *root)
 {
-    return handle_elseif_statement_tail();
+    return handle_elseif_statement_tail(root);
 }
 
 ASTNode *handle_else_if_statement()
@@ -577,7 +543,7 @@ ASTNode *handle_else_if_statement()
 
         peek_next_token();
 
-        add_child(root, handle_statement_structure());
+        handle_statement_structure(root);
 
         return root;
     }
@@ -585,42 +551,38 @@ ASTNode *handle_else_if_statement()
     return NULL;
 }
 
-ASTNode *handle_elseif_statement_tail()
+ASTNode *handle_elseif_statement_tail(ASTNode *root)
 {
     if (peek_current_token().subtype == TermElseIf)
     {
-        ASTNode *root = handle_else_if_statement();
+        add_child(root, handle_else_if_statement());
 
-        add_child(root, handle_elseif_statement_tail());
-
-        return root;
+        return handle_elseif_statement_tail(root);
     }
 
-    return NULL;
+    return root;
 }
 
-ASTNode *handle_else_statement()
+ASTNode *handle_else_statement(ASTNode *root)
 {
     if (peek_current_token().subtype == TermElse)
     {
-        ASTNode *root = create_node_current_token();
+        ASTNode *root_else = create_node_current_token();
 
         peek_next_token();
 
-        add_child(root, handle_compound_statement());
-
+        add_child(root_else, handle_compound_statement());
+        add_child(root, root_else);
         return root;
     }
 
     return NULL;
 }
 
-ASTNode *handle_statement_structure()
+ASTNode *handle_statement_structure(ASTNode *root)
 {
     if (peek_current_token().subtype == TermLparen)
     {
-        ASTNode *root = create_node_current_token();
-
         peek_next_token();
 
         add_child(root, handle_expr_bool());
@@ -632,8 +594,6 @@ ASTNode *handle_statement_structure()
         }
         else
         {
-            add_child(root, create_node_current_token());
-
             peek_next_token();
 
             add_child(root, handle_compound_statement());
@@ -663,12 +623,12 @@ ASTNode *handle_for_statement()
         }
         else
         {
-            add_child(root, create_node_current_token());
-
             peek_next_token();
+            ASTNode *assigns_node = create_node("assigns", get_undef_token());
 
-            add_child(root, handle_assign_expr_list());
+            handle_assign_expr_list(assigns_node);
 
+            add_child(root, assigns_node);
             if (peek_current_token().subtype != TermSemi)
             {
                 error_handler("expected: ; 2");
@@ -676,10 +636,10 @@ ASTNode *handle_for_statement()
             }
             else
             {
-                add_child(root, create_node_current_token());
-
                 peek_next_token();
-                add_child(root, handle_for_expr_bool());
+                ASTNode *exprs_node = create_node("expr", get_undef_token());
+                add_child(exprs_node, handle_for_expr_bool());
+                add_child(root, exprs_node);
                 if (peek_current_token().subtype != TermSemi)
                 {
                     error_handler("expected: ; 3");
@@ -687,11 +647,12 @@ ASTNode *handle_for_statement()
                 }
                 else
                 {
-                    add_child(root, create_node_current_token());
-
                     peek_next_token();
 
-                    add_child(root, handle_assign_expr_list());
+                    ASTNode *assigns_node = create_node("assigns", get_undef_token());
+
+                    handle_assign_expr_list(assigns_node);
+                    add_child(root, assigns_node);
 
                     if (peek_current_token().subtype != TermRparen)
                     {
@@ -700,8 +661,6 @@ ASTNode *handle_for_statement()
                     }
                     else
                     {
-                        add_child(root, create_node_current_token());
-
                         peek_next_token();
                         add_child(root, handle_compound_statement());
 
@@ -725,36 +684,32 @@ ASTNode *handle_for_expr_bool()
     return NULL;
 }
 
-ASTNode *handle_assign_expr_list()
+ASTNode *handle_assign_expr_list(ASTNode *assigns_node)
 {
     if (peek_current_token().subtype == TermIdentifier)
     {
-        ASTNode *root = handle_reassign_expr();
+        add_child(assigns_node, handle_reassign_expr());
 
-        add_child(root, handle_assign_expr_tail());
+        handle_assign_expr_tail(assigns_node);
 
-        return root;
+        return assigns_node;
     }
 
     return NULL;
 }
 
-ASTNode *handle_assign_expr_tail()
+ASTNode *handle_assign_expr_tail(ASTNode *assigns_node)
 {
     if (peek_current_token().subtype == TermComma)
     {
-        ASTNode *root = create_node_current_token();
-
         peek_next_token();
 
-        add_child(root, handle_reassign_expr());
+        add_child(assigns_node, handle_reassign_expr());
 
-        add_child(root, handle_assign_expr_tail());
-
-        return root;
+        handle_assign_expr_tail(assigns_node);
     }
 
-    return NULL;
+    return assigns_node;
 }
 
 ASTNode *handle_identifier()

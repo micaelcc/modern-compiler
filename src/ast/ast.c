@@ -21,6 +21,7 @@ ASTNode *create_node(char *value, Token t)
 
 void add_child(ASTNode *parent, ASTNode *child)
 {
+    if (!child) return;
     parent->childrens = (ASTNode **)realloc(parent->childrens, sizeof(ASTNode *) * (parent->child_count + 1));
     parent->childrens[parent->child_count++] = child;
 }
