@@ -759,49 +759,46 @@ ASTNode *handle_identifier_array()
     return NULL;
 }
 
+
 /*
-extern int success;
+ *
+ *  Abaixo, o mesmo parser, porem apenas fazendo a checagem de sintaxe, sem gerar ast. 
+ * 
+*/
 
-ASTNode *create_node_current_token()
-{
-    Token t = peek_current_token();
-
-    return;
-}
-
-void handle_program()
+ASTNode* only_syntax_check_handle_program()
 {
     create_node("program", get_undef_token());
 
-    handle_statement_list();
+    only_syntax_check_handle_statement_list();
 
-    return;
+    return NULL;
 }
 
-void handle_statement_list()
+void only_syntax_check_handle_statement_list()
 {
-    handle_statement();
+    only_syntax_check_handle_statement();
 
-    handle_statement_list_tail();
+    only_syntax_check_handle_statement_list_tail();
 
     return;
 }
 
-void handle_statement()
+void only_syntax_check_handle_statement()
 {
 
     Token curr_tok = peek_current_token();
     if (curr_tok.subtype == TermIf)
     {
-        return handle_if_statement();
+        return only_syntax_check_handle_if_statement();
     }
     else if (curr_tok.subtype == TermWhile)
     {
-        return handle_while_statement();
+        return only_syntax_check_handle_while_statement();
     }
     else if (curr_tok.subtype == TermFor)
     {
-        return handle_for_statement();
+        return only_syntax_check_handle_for_statement();
     }
     else if (curr_tok.type == TOKEN_AND || curr_tok.type == TOKEN_ASSIGN || curr_tok.type == TOKEN_COMMA || curr_tok.type == TOKEN_DIV || curr_tok.type == TOKEN_EQ || curr_tok.type == TOKEN_GE || curr_tok.type == TOKEN_GT || curr_tok.type == TOKEN_LBRACE || curr_tok.type == TOKEN_LE || curr_tok.type == TOKEN_LSQUARE || curr_tok.type == TOKEN_LT || curr_tok.type == TOKEN_MUL || curr_tok.type == TOKEN_NE || curr_tok.type == TOKEN_NOT || curr_tok.type == TOKEN_OR || curr_tok.type == TOKEN_RSQUARE || curr_tok.type == TOKEN_RPAREN || curr_tok.type == TOKEN_RBRACE || curr_tok.type == TOKEN_POW)
     {
@@ -810,7 +807,7 @@ void handle_statement()
     }
     else
     {
-        handle_expr();
+        only_syntax_check_handle_expr();
 
         create_node_current_token();
 
@@ -827,12 +824,12 @@ void handle_statement()
     }
 }
 
-void handle_statement_list_tail()
+void only_syntax_check_handle_statement_list_tail()
 {
     if (peek_current_token().subtype == TermDefVar || peek_current_token().subtype == TermIdentifier || peek_current_token().subtype == TermWhile || peek_current_token().subtype == TermFor || peek_current_token().subtype == TermIf || peek_current_token().subtype == TermDefVar)
     {
-        handle_statement();
-        handle_statement_list_tail();
+        only_syntax_check_handle_statement();
+        only_syntax_check_handle_statement_list_tail();
 
         return;
     }
@@ -840,7 +837,7 @@ void handle_statement_list_tail()
     return;
 }
 
-void handle_compound_statement()
+void only_syntax_check_handle_compound_statement()
 {
     if (peek_current_token().subtype == TermLbrace)
     {
@@ -848,7 +845,7 @@ void handle_compound_statement()
 
         peek_next_token();
 
-        handle_statement_list();
+        only_syntax_check_handle_statement_list();
 
         if (peek_current_token().subtype != TermRbrace)
         {
@@ -870,19 +867,19 @@ void handle_compound_statement()
     }
 }
 
-void handle_expr()
+void only_syntax_check_handle_expr()
 {
     if (peek_current_token().subtype == TermIdentifier)
     {
-        handle_identifier();
+        only_syntax_check_handle_identifier();
 
-        handle_reassign_expr_tail();
+        only_syntax_check_handle_reassign_expr_tail();
 
         return;
     }
     else if (peek_current_token().subtype == TermDefVar)
     {
-        return handle_decl_expr();
+        return only_syntax_check_handle_decl_expr();
     }
     else
     {
@@ -891,11 +888,11 @@ void handle_expr()
     }
 }
 
-void handle_reassign_expr()
+void only_syntax_check_handle_reassign_expr()
 {
     if (peek_current_token().subtype == TermIdentifier)
     {
-        handle_identifier();
+        only_syntax_check_handle_identifier();
 
         if (peek_current_token().subtype != TermAssign)
         {
@@ -907,7 +904,7 @@ void handle_reassign_expr()
             create_node_current_token();
             peek_next_token();
 
-            handle_arith_expr();
+            only_syntax_check_handle_arith_expr();
 
             return;
         }
@@ -919,7 +916,7 @@ void handle_reassign_expr()
     }
 }
 
-void handle_decl_expr()
+void only_syntax_check_handle_decl_expr()
 {
     if (peek_current_token().subtype == TermDefVar)
     {
@@ -933,8 +930,8 @@ void handle_decl_expr()
         }
         else
         {
-            handle_identifier();
-            handle_decl_expr_assign();
+            only_syntax_check_handle_identifier();
+            only_syntax_check_handle_decl_expr_assign();
 
             return;
         }
@@ -946,13 +943,13 @@ void handle_decl_expr()
     }
 }
 
-void handle_decl_expr_assign()
+void only_syntax_check_handle_decl_expr_assign()
 {
     if (peek_current_token().subtype == TermAssign)
     {
         create_node_current_token();
         peek_next_token();
-        handle_arith_expr();
+        only_syntax_check_handle_arith_expr();
 
         return;
     }
@@ -960,47 +957,47 @@ void handle_decl_expr_assign()
     return;
 }
 
-void handle_reassign_expr_tail()
+void only_syntax_check_handle_reassign_expr_tail()
 {
     if (peek_current_token().subtype == TermAssign)
     {
         create_node_current_token();
         peek_next_token();
 
-        handle_arith_expr();
+        only_syntax_check_handle_arith_expr();
 
         return;
     }
     else
     {
-        return handle_arith_expr_tail();
+        return only_syntax_check_handle_arith_expr_tail();
     }
 }
 
-void handle_arith_expr()
+void only_syntax_check_handle_arith_expr()
 {
-    handle_term();
+    only_syntax_check_handle_term();
 
-    handle_arith_expr_tail();
+    only_syntax_check_handle_arith_expr_tail();
 
     return;
 }
 
-void handle_arith_expr_tail()
+void only_syntax_check_handle_arith_expr_tail()
 {
-    return handle_arith_expr_tail_rest();
+    return only_syntax_check_handle_arith_expr_tail_rest();
 }
 
-void handle_arith_expr_tail_rest()
+void only_syntax_check_handle_arith_expr_tail_rest()
 {
     if (peek_current_token().subtype == TermPlus)
     {
         create_node_current_token();
         peek_next_token();
 
-        handle_term();
+        only_syntax_check_handle_term();
 
-        handle_arith_expr_tail_rest();
+        only_syntax_check_handle_arith_expr_tail_rest();
 
         return;
     }
@@ -1009,9 +1006,9 @@ void handle_arith_expr_tail_rest()
         create_node_current_token();
         peek_next_token();
 
-        handle_term();
+        only_syntax_check_handle_term();
 
-        handle_arith_expr_tail_rest();
+        only_syntax_check_handle_arith_expr_tail_rest();
 
         return;
     }
@@ -1019,30 +1016,30 @@ void handle_arith_expr_tail_rest()
     return;
 }
 
-void handle_term()
+void only_syntax_check_handle_term()
 {
-    handle_factor();
+    only_syntax_check_handle_factor();
 
-    handle_term_list();
+    only_syntax_check_handle_term_list();
 
     return;
 }
 
-void handle_term_list()
+void only_syntax_check_handle_term_list()
 {
-    return handle_term_list_tail();
+    return only_syntax_check_handle_term_list_tail();
 }
 
-void handle_term_list_tail()
+void only_syntax_check_handle_term_list_tail()
 {
     if (peek_current_token().subtype == TermMul)
     {
         create_node_current_token();
         peek_next_token();
 
-        handle_factor();
+        only_syntax_check_handle_factor();
 
-        handle_term_list_tail();
+        only_syntax_check_handle_term_list_tail();
 
         return;
     }
@@ -1051,9 +1048,9 @@ void handle_term_list_tail()
         create_node_current_token();
         peek_next_token();
 
-        handle_factor();
+        only_syntax_check_handle_factor();
 
-        handle_term_list_tail();
+        only_syntax_check_handle_term_list_tail();
 
         return;
     }
@@ -1061,12 +1058,12 @@ void handle_term_list_tail()
     return;
 }
 
-void handle_factor()
+void only_syntax_check_handle_factor()
 {
-    return handle_factor_rest();
+    return only_syntax_check_handle_factor_rest();
 }
 
-void handle_factor_rest()
+void only_syntax_check_handle_factor_rest()
 {
     if (peek_current_token().subtype == TermPlus)
     {
@@ -1074,7 +1071,7 @@ void handle_factor_rest()
 
         peek_next_token();
 
-        handle_pow();
+        only_syntax_check_handle_pow();
 
         return;
     }
@@ -1084,25 +1081,25 @@ void handle_factor_rest()
 
         peek_next_token();
 
-        handle_pow();
+        only_syntax_check_handle_pow();
 
         return;
     }
     else
     {
-        return handle_pow();
+        return only_syntax_check_handle_pow();
     }
 }
 
-void handle_pow()
+void only_syntax_check_handle_pow()
 {
-    handle_atom();
-    handle_pow_rest();
+    only_syntax_check_handle_atom();
+    only_syntax_check_handle_pow_rest();
 
     return;
 }
 
-void handle_pow_rest()
+void only_syntax_check_handle_pow_rest()
 {
     if (peek_current_token().subtype == TermPow)
     {
@@ -1110,7 +1107,7 @@ void handle_pow_rest()
 
         peek_next_token();
 
-        handle_pow();
+        only_syntax_check_handle_pow();
 
         return;
     }
@@ -1118,11 +1115,11 @@ void handle_pow_rest()
     return;
 }
 
-void handle_atom()
+void only_syntax_check_handle_atom()
 {
     if (peek_current_token().subtype == TermIdentifier)
     {
-        return handle_identifier();
+        return only_syntax_check_handle_identifier();
     }
     else if (peek_current_token().subtype == TermInteger || peek_current_token().subtype == TermFloat || peek_current_token().subtype == TermString)
     {
@@ -1138,7 +1135,7 @@ void handle_atom()
 
         peek_next_token();
 
-        handle_arith_expr();
+        only_syntax_check_handle_arith_expr();
 
         if (peek_current_token().subtype != TermRparen)
         {
@@ -1154,7 +1151,7 @@ void handle_atom()
     }
     else if (peek_current_token().subtype == TermLbracket)
     {
-        return handle_array();
+        return only_syntax_check_handle_array();
     }
     else
     {
@@ -1163,14 +1160,14 @@ void handle_atom()
     }
 }
 
-void handle_array()
+void only_syntax_check_handle_array()
 {
     if (peek_current_token().subtype == TermLbracket)
     {
         create_node_current_token();
 
         peek_next_token();
-        handle_items_array();
+        only_syntax_check_handle_items_array();
 
         if (peek_current_token().subtype != TermRbracket)
         {
@@ -1192,13 +1189,13 @@ void handle_array()
     }
 }
 
-void handle_items_array()
+void only_syntax_check_handle_items_array()
 {
     if (peek_current_token().subtype == TermLbracket || peek_current_token().subtype == TermLparen || peek_current_token().subtype == TermInteger || peek_current_token().subtype == TermFloat || peek_current_token().subtype == TermString || peek_current_token().subtype == TermIdentifier)
     {
-        handle_atom();
+        only_syntax_check_handle_atom();
 
-        handle_items_array_tail();
+        only_syntax_check_handle_items_array_tail();
 
         return;
     }
@@ -1206,7 +1203,7 @@ void handle_items_array()
     return;
 }
 
-void handle_items_array_tail()
+void only_syntax_check_handle_items_array_tail()
 {
     if (peek_current_token().subtype == TermComma)
     {
@@ -1214,9 +1211,9 @@ void handle_items_array_tail()
 
         peek_next_token();
 
-        handle_atom();
+        only_syntax_check_handle_atom();
 
-        handle_items_array_tail();
+        only_syntax_check_handle_items_array_tail();
 
         return;
     }
@@ -1224,21 +1221,21 @@ void handle_items_array_tail()
     return;
 }
 
-void handle_expr_bool()
+void only_syntax_check_handle_expr_bool()
 {
-    return handle_expr_bool_or();
+    return only_syntax_check_handle_expr_bool_or();
 }
 
-void handle_expr_bool_or()
+void only_syntax_check_handle_expr_bool_or()
 {
-    handle_expr_bool_and();
+    only_syntax_check_handle_expr_bool_and();
 
-    handle_expr_bool_or_rest();
+    only_syntax_check_handle_expr_bool_or_rest();
 
     return;
 }
 
-void handle_expr_bool_or_rest()
+void only_syntax_check_handle_expr_bool_or_rest()
 {
     if (peek_current_token().subtype == TermOr)
     {
@@ -1246,9 +1243,9 @@ void handle_expr_bool_or_rest()
 
         peek_next_token();
 
-        handle_expr_bool_and();
+        only_syntax_check_handle_expr_bool_and();
 
-        handle_expr_bool_and_tail();
+        only_syntax_check_handle_expr_bool_and_tail();
 
         return;
     }
@@ -1256,16 +1253,16 @@ void handle_expr_bool_or_rest()
     return;
 }
 
-void handle_expr_bool_and()
+void only_syntax_check_handle_expr_bool_and()
 {
-    handle_expr_bool_not();
+    only_syntax_check_handle_expr_bool_not();
 
-    handle_expr_bool_and_tail();
+    only_syntax_check_handle_expr_bool_and_tail();
 
     return;
 }
 
-void handle_expr_bool_and_tail()
+void only_syntax_check_handle_expr_bool_and_tail()
 {
     if (peek_current_token().subtype == TermAnd)
     {
@@ -1273,9 +1270,9 @@ void handle_expr_bool_and_tail()
 
         peek_next_token();
 
-        handle_expr_bool_not();
+        only_syntax_check_handle_expr_bool_not();
 
-        handle_expr_bool_and_tail();
+        only_syntax_check_handle_expr_bool_and_tail();
 
         return;
     }
@@ -1283,7 +1280,7 @@ void handle_expr_bool_and_tail()
     return;
 }
 
-void handle_expr_bool_not()
+void only_syntax_check_handle_expr_bool_not()
 {
     if (peek_current_token().subtype == TermNot)
     {
@@ -1291,25 +1288,25 @@ void handle_expr_bool_not()
 
         peek_next_token();
 
-        handle_expr_bool_not();
+        only_syntax_check_handle_expr_bool_not();
         return;
     }
     else
     {
-        return handle_expr_bool_rel();
+        return only_syntax_check_handle_expr_bool_rel();
     }
 }
 
-void handle_expr_bool_rel()
+void only_syntax_check_handle_expr_bool_rel()
 {
-    handle_arith_expr();
+    only_syntax_check_handle_arith_expr();
 
-    handle_expr_bool_rel_tail();
+    only_syntax_check_handle_expr_bool_rel_tail();
 
     return;
 }
 
-void handle_expr_bool_rel_tail()
+void only_syntax_check_handle_expr_bool_rel_tail()
 {
     if (peek_current_token().subtype == TermLe || peek_current_token().subtype == TermGe || peek_current_token().subtype == TermGt || peek_current_token().subtype == TermLt || peek_current_token().subtype == TermNe || peek_current_token().subtype == TermEq)
     {
@@ -1317,7 +1314,7 @@ void handle_expr_bool_rel_tail()
 
         peek_next_token();
 
-        handle_arith_expr();
+        only_syntax_check_handle_arith_expr();
 
         return;
     }
@@ -1325,12 +1322,12 @@ void handle_expr_bool_rel_tail()
     return;
 }
 
-void handle_expr_bool_rel_factor()
+void only_syntax_check_handle_expr_bool_rel_factor()
 {
-    return handle_arith_expr();
+    return only_syntax_check_handle_arith_expr();
 }
 
-void handle_while_statement()
+void only_syntax_check_handle_while_statement()
 {
     if (peek_current_token().subtype == TermWhile)
     {
@@ -1338,7 +1335,7 @@ void handle_while_statement()
 
         peek_next_token();
 
-        handle_statement_structure();
+        only_syntax_check_handle_statement_structure();
 
         return;
     }
@@ -1346,7 +1343,7 @@ void handle_while_statement()
     return;
 }
 
-void handle_if_statement()
+void only_syntax_check_handle_if_statement()
 {
     if (peek_current_token().subtype == TermIf)
     {
@@ -1354,10 +1351,10 @@ void handle_if_statement()
 
         peek_next_token();
 
-        handle_statement_structure();
-        handle_else_if_statement_list();
+        only_syntax_check_handle_statement_structure();
+        only_syntax_check_handle_else_if_statement_list();
 
-        handle_else_statement();
+        only_syntax_check_handle_else_statement();
 
         return;
     }
@@ -1365,12 +1362,12 @@ void handle_if_statement()
     return;
 }
 
-void handle_else_if_statement_list()
+void only_syntax_check_handle_else_if_statement_list()
 {
-    return handle_elseif_statement_tail();
+    return only_syntax_check_handle_elseif_statement_tail();
 }
 
-void handle_else_if_statement()
+void only_syntax_check_handle_else_if_statement()
 {
     if (peek_current_token().subtype == TermElseIf)
     {
@@ -1378,7 +1375,7 @@ void handle_else_if_statement()
 
         peek_next_token();
 
-        handle_statement_structure();
+        only_syntax_check_handle_statement_structure();
 
         return;
     }
@@ -1386,13 +1383,13 @@ void handle_else_if_statement()
     return;
 }
 
-void handle_elseif_statement_tail()
+void only_syntax_check_handle_elseif_statement_tail()
 {
     if (peek_current_token().subtype == TermElseIf)
     {
-        handle_else_if_statement();
+        only_syntax_check_handle_else_if_statement();
 
-        handle_elseif_statement_tail();
+        only_syntax_check_handle_elseif_statement_tail();
 
         return;
     }
@@ -1400,7 +1397,7 @@ void handle_elseif_statement_tail()
     return;
 }
 
-void handle_else_statement()
+void only_syntax_check_handle_else_statement()
 {
     if (peek_current_token().subtype == TermElse)
     {
@@ -1408,7 +1405,7 @@ void handle_else_statement()
 
         peek_next_token();
 
-        handle_compound_statement();
+        only_syntax_check_handle_compound_statement();
 
         return;
     }
@@ -1416,7 +1413,7 @@ void handle_else_statement()
     return;
 }
 
-void handle_statement_structure()
+void only_syntax_check_handle_statement_structure()
 {
     if (peek_current_token().subtype == TermLparen)
     {
@@ -1424,7 +1421,7 @@ void handle_statement_structure()
 
         peek_next_token();
 
-        handle_expr_bool();
+        only_syntax_check_handle_expr_bool();
 
         if (peek_current_token().subtype != TermRparen)
         {
@@ -1437,7 +1434,7 @@ void handle_statement_structure()
 
             peek_next_token();
 
-            handle_compound_statement();
+            only_syntax_check_handle_compound_statement();
 
             return;
         }
@@ -1449,7 +1446,7 @@ void handle_statement_structure()
     }
 }
 
-void handle_for_statement()
+void only_syntax_check_handle_for_statement()
 {
     if (peek_current_token().subtype == TermFor)
     {
@@ -1468,7 +1465,7 @@ void handle_for_statement()
 
             peek_next_token();
 
-            handle_assign_expr_list();
+            only_syntax_check_handle_assign_expr_list();
 
             if (peek_current_token().subtype != TermSemi)
             {
@@ -1480,7 +1477,7 @@ void handle_for_statement()
                 create_node_current_token();
 
                 peek_next_token();
-                handle_for_expr_bool();
+                only_syntax_check_handle_for_expr_bool();
                 if (peek_current_token().subtype != TermSemi)
                 {
                     error_handler("expected: ; 3");
@@ -1492,7 +1489,7 @@ void handle_for_statement()
 
                     peek_next_token();
 
-                    handle_assign_expr_list();
+                    only_syntax_check_handle_assign_expr_list();
 
                     if (peek_current_token().subtype != TermRparen)
                     {
@@ -1504,7 +1501,7 @@ void handle_for_statement()
                         create_node_current_token();
 
                         peek_next_token();
-                        handle_compound_statement();
+                        only_syntax_check_handle_compound_statement();
 
                         return;
                     }
@@ -1516,23 +1513,23 @@ void handle_for_statement()
     return;
 }
 
-void handle_for_expr_bool()
+void only_syntax_check_handle_for_expr_bool()
 {
     if (peek_current_token().subtype == TermNot || peek_current_token().subtype == TermLbracket || peek_current_token().subtype == TermLparen || peek_current_token().subtype == TermInteger || peek_current_token().subtype == TermFloat || peek_current_token().subtype == TermString || peek_current_token().subtype == TermIdentifier)
     {
-        return handle_expr_bool();
+        return only_syntax_check_handle_expr_bool();
     }
 
     return;
 }
 
-void handle_assign_expr_list()
+void only_syntax_check_handle_assign_expr_list()
 {
     if (peek_current_token().subtype == TermIdentifier)
     {
-        handle_reassign_expr();
+        only_syntax_check_handle_reassign_expr();
 
-        handle_assign_expr_tail();
+        only_syntax_check_handle_assign_expr_tail();
 
         return;
     }
@@ -1540,7 +1537,7 @@ void handle_assign_expr_list()
     return;
 }
 
-void handle_assign_expr_tail()
+void only_syntax_check_handle_assign_expr_tail()
 {
     if (peek_current_token().subtype == TermComma)
     {
@@ -1548,9 +1545,9 @@ void handle_assign_expr_tail()
 
         peek_next_token();
 
-        handle_reassign_expr();
+        only_syntax_check_handle_reassign_expr();
 
-        handle_assign_expr_tail();
+        only_syntax_check_handle_assign_expr_tail();
 
         return;
     }
@@ -1558,7 +1555,7 @@ void handle_assign_expr_tail()
     return;
 }
 
-void handle_identifier()
+void only_syntax_check_handle_identifier()
 {
     if (peek_current_token().subtype == TermIdentifier)
     {
@@ -1566,7 +1563,7 @@ void handle_identifier()
 
         peek_next_token();
 
-        handle_identifier_array();
+        only_syntax_check_handle_identifier_array();
 
         return;
     }
@@ -1577,7 +1574,7 @@ void handle_identifier()
     }
 }
 
-void handle_identifier_array()
+void only_syntax_check_handle_identifier_array()
 {
     if (peek_current_token().subtype == TermLbracket)
     {
@@ -1585,7 +1582,7 @@ void handle_identifier_array()
 
         peek_next_token();
 
-        handle_arith_expr();
+        only_syntax_check_handle_arith_expr();
 
         if (peek_current_token().subtype != TermRbracket)
         {
@@ -1604,4 +1601,3 @@ void handle_identifier_array()
 
     return;
 }
-*/

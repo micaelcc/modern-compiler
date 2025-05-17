@@ -1,0 +1,10 @@
+#ifndef CONFIG_H
+#define CONFIG_H
+
+#define ONLY_SYNTAX_CHECK 0
+#define PRINT_TOKENS 0
+#define PRINT_AST 0
+#define EXECUTE_RECURSIVE_DESCENT 1
+#define EXECUTE_TABLE_DRIVEN 1
+
+#endif

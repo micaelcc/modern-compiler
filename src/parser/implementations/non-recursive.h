@@ -26,3 +26,4 @@ int precedence(TokenSubtype);
 bool is_high_precedence(Token, gpointer);
 void perform_ast_node(int, Token, gpointer, gpointer);
 void handle_ast(int, Token, Token *, IsParsingFlags *, gpointer, gpointer, gpointer, ASTNode *, ASTNode *);
+void parser_non_recurs_only_syntax_check(); //op

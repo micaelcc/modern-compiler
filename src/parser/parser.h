@@ -5,6 +5,6 @@
 #include "./implementations/recursive.h"
 #include "./implementations/non-recursive.h"
 #include "../ast/ast.h"
-
+#include "../config.h"
 ASTNode *execute_recursive_descendent();
 ASTNode *execute_non_recursive();

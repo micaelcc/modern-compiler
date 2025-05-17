@@ -278,8 +278,7 @@ bool is_high_precedence(Token curr_token, gpointer op_stack)
     return precedence(st_node->token->subtype) >= precedence(curr_token.subtype);
 }
 
-/*
-void parser_non_recurs2()
+void parser_non_recurs_only_syntax_check()
 {
     ParseTable table = get_table();
     GQueue *stack = g_queue_new();
@@ -340,4 +339,3 @@ void parser_non_recurs2()
     g_queue_free(stack);
     return;
 }
-*/

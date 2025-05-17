@@ -170,8 +170,11 @@ ASTNode *create_else(gpointer ast_stack, gpointer block_stack)
 }
 
 ASTNode *create_for(gpointer ast_stack, gpointer block_stack)
-{
-    ASTNode *node = create_node(FOR, get_undef_token());
+{   
+    
+    Token tok_for = {TOKEN_KEY, TermFor, FOR};
+    ASTNode *node = create_node(FOR, tok_for);
+
     Token block = {TermLbrace, TOKEN_LBRACE, LBRACE};
     ASTNode *block_node = create_node("block", block);
     add_child(node, create_node("assigns", get_undef_token()));
@@ -185,7 +188,15 @@ ASTNode *create_for(gpointer ast_stack, gpointer block_stack)
 
 void update_node_for(ASTNode *root, size_t child_index, ASTNode *node)
 {
-    ASTNode *_for = root->childrens[root->child_count - 1];
-    add_child(_for->childrens[child_index], node);
+    ASTNode * last = root->childrens[root->child_count - 1];
+    ASTNode * _last_for = last;
+
+    while(last->child_count > 0) {
+        last = last->childrens[last->child_count - 1];
+        if (last->token != NULL && last->token->subtype == TermFor) 
+            _last_for = last;          
+    }
+    add_child(_last_for->childrens[child_index], node);
     return;
 }
+
