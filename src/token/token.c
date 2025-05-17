@@ -1,6 +1,6 @@
 #include "token.h"
 
-Token create_token(TokenType t, char *value)
+Token create_token(TokenType t, const char *value)
 {
     Token new_token;
 
@@ -10,7 +10,7 @@ Token create_token(TokenType t, char *value)
     }
 
     new_token.type = t;
-    new_token.value = value;
+    new_token.value = strdup(value);
     new_token.subtype = get_token_subtype(t, value);
 
     return new_token;
@@ -37,7 +37,7 @@ Token *push_token(Token t, Token *l, int *size)
     return l;
 }
 
-TokenType get_token_type(char *value)
+TokenType get_token_type(const char *value)
 {
     if (0 == strcmp(value, PLUS))
         return TOKEN_PLUS;
@@ -117,7 +117,7 @@ TokenType get_token_type(char *value)
     return TOKEN_UNK;
 }
 
-char *get_constant_by_type(TokenType type)
+const char *get_constant_by_type(TokenType type)
 {
     switch (type)
     {
@@ -140,7 +140,7 @@ void print_tokens(Token *t)
 
     for (; strcmp(t->value, E0F) != 0; t++)
     {
-        type = get_constant_by_type(t->type);
+        type = (char *)get_constant_by_type(t->type);
 
         if (type != NULL)
             printf("\033[32m ⦃%s:%s:%d⦄\033[0m", get_constant_by_type(t->type), t->value, t->subtype);
@@ -151,7 +151,7 @@ void print_tokens(Token *t)
     printf("\033[30m [%d:$EOF: %d]\033[0m\n\n", t->type, t->subtype);
 }
 
-int get_token_subtype(TokenType tt, char *value)
+int get_token_subtype(TokenType tt, const char *value)
 {
     switch (tt)
     {
@@ -228,6 +228,7 @@ int get_token_subtype(TokenType tt, char *value)
             return TermElseIf;
         else if (strcmp(value, ELSE) == 0)
             return TermElse;
+        return -1;
     default:
         return -1;
     }

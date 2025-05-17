@@ -18,7 +18,7 @@ Token peek_next_token();
 Token peek_next_token_no_advance();
 size_t get_current_token_index();
 void make_tokens(const char[]);
-void advance_next_char(char *, size_t *, size_t *, size_t *);
+void advance_next_char(const char *, size_t *, size_t *, size_t *);
 char *make_bool_operator(const char[], size_t *);
 char *make_lexema(const char[], size_t *, LexemaCondition);
 bool is_end_of_statement(char);

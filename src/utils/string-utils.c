@@ -3,7 +3,6 @@
 void replace_char(char *s, char find, char replace)
 {
     int i = 0;
-    int found_first = 0;
 
     while (s[i])
     {
@@ -96,7 +95,7 @@ char *substring(const char *s, int start, int end)
     char *value;
 
     SIZE = end - start + 1;
-    value = malloc(SIZE * sizeof(char));
+    value = (char *)malloc(SIZE * sizeof(char));
 
     strncpy(value, s + start, SIZE);
     value[SIZE] = '\0';

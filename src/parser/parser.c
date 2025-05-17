@@ -1,6 +1,7 @@
 #include "parser.h"
 extern int success;
 extern size_t current_token_index;
+const bool PRINT_AST = true;
 
 ASTNode *execute_recursive_descendent()
 {
@@ -29,6 +30,12 @@ ASTNode *execute_recursive_descendent()
     printf("\t\tMemory consumption (ASDRP): %ld KB\n", memory_used2);
     current_token_index = 0;
 
+    if (PRINT_AST)
+    {
+        printf("\t\tAbstract Syntax Tree (AST): \n");
+        print_ast(ast_node);
+    }
+
     return ast_node;
 }
 
@@ -42,7 +49,7 @@ ASTNode *execute_non_recursive()
 
     struct rusage usage_before, usage_after;
 
-    printf("\033[0;34mExecuting Table-Driven Parser...\033[0m\n");
+    printf("\033\n\n\t\t[0;34mExecuting Table-Driven Parser...\033[0m\n");
     getrusage(RUSAGE_SELF, &usage_before);
     start = clock();
 
@@ -60,6 +67,12 @@ ASTNode *execute_non_recursive()
     long memory_used = usage_after.ru_maxrss - usage_before.ru_maxrss;
     printf("\t\tMemory consumption (ASTP): %ld KB\n", memory_used);
     current_token_index = 0;
+
+    if (PRINT_AST)
+    {
+        printf("\t\tAbstract Syntax Tree (AST): \n");
+        print_ast(ast_node);
+    }
 
     return ast_node;
 }

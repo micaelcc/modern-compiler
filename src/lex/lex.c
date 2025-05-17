@@ -81,7 +81,7 @@ void make_tokens(const char value[])
     set_tokens(tokens);
 }
 
-void advance_next_char(char *s, size_t *row, size_t *column, size_t *index)
+void advance_next_char(const char *s, size_t *row, size_t *column, size_t *index)
 {
     (*index) += 1;
     (*column) += 1;

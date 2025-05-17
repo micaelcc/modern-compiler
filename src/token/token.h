@@ -87,10 +87,12 @@ typedef struct
     char *value;
 } Token;
 
-int get_token_subtype(TokenType, char *);
-Token create_token(TokenType, char *);
+int get_token_subtype(TokenType, const char *);
+Token create_token(TokenType, const char *);
 Token *push_token(Token, Token *, int *);
 void print_tokens(Token *);
 Token get_undef_token();
+TokenType get_token_type(const char *);
+const char *get_constant_by_type(TokenType);
 
 #endif /* __TOKEN_H__ */

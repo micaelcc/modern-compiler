@@ -11,7 +11,7 @@ void print_samples()
 void prompt()
 {
     printf("Type :s for an example, :q to quit\n");
-
+    srand(time(NULL));
     for (;;)
     {
         printf("\n>>> ");
@@ -32,18 +32,24 @@ void prompt()
             continue;
         }
 
-        make_tokens(s);
+        // char *ss = "let a=[2,3,4,5];let i;let aux;for(aux=0,i=1;i<5;i=i+1){aux=a[i]+aux;}let new;if(aux>10){new=aux;}else {new=-10;}let a=[1,2,3,4];let b=[1,2,3]+a[1]+1;let a=[2,3,4,5];let i;let aux;for(aux=0,i=1;i<5;i=i+1){aux=a[i]+aux;}let new;if(aux>10){new=aux;}else {new=-10;}let a=[1,2,3,4];let b=[1,2,3]+a[1]+1;let a=[2,3,4,5];let i;let aux;for(aux=0,i=1;i<5;i=i+1){aux=a[i]+aux;}let new;if(aux>10){new=aux;}else {new=-10;}let a=[1,2,3,4];let b=[1,2,3]+a[1]+1;let a=[2,3,4,5];let i;let aux;for(aux=0,i=1;i<5;i=i+1){aux=a[i]+aux;}let new;if(aux>10){new=aux;}else {new=-10;}let a=[1,2,3,4];let b=[1,2,3]+a[1]+1;let a=[2,3,4,5];let i;let aux;for(aux=0,i=1;i<5;i=i+1){aux=a[i]+aux;}let new;if(aux>10){new=aux;}else {new=-10;}let a=[1,2,3,4];let b=[1,2,3]+a[1]+1;let a=[2,3,4,5];let i;let aux;for(aux=0,i=1;i<5;i=i+1){aux=a[i]+aux;}let new;if(aux>10){new=aux;}else {new=-10;}let a=[1,2,3,4];let b=[1,2,3]+a[1]+1;let a=[2,3,4,5];let i;let aux;for(aux=0,i=1;i<5;i=i+1){aux=a[i]+aux;}let new;if(aux>10){new=aux;}else {new=-10;}let a=[1,2,3,4];let b=[1,2,3]+a[1]+1;let a=[2,3,4,5];let i;let aux;for(aux=0,i=1;i<5;i=i+1){aux=a[i]+aux;}let new;if(aux>10){new=aux;}else {new=-10;}let a=[1,2,3,4];let b=[1,2,3]+a[1]+1;let a=[2,3,4,5];let i;let aux;for(aux=0,i=1;i<5;i=i+1){aux=a[i]+aux;}let new;if(aux>10){new=aux;}else {new=-10;}let a=[1,2,3,4];let b=[1,2,3]+a[1]+1;let a=[2,3,4,5];let i;let aux;for(aux=0,i=1;i<5;i=i+1){aux=a[i]+aux;}let new;if(aux>10){new=aux;}else {new=-10;}let a=[1,2,3,4];let b=[1,2,3]+a[1]+1;let a=[2,3,4,5];let i;let aux;for(aux=0,i=1;i<5;i=i+1){aux=a[i]+aux;}let new;if(aux>10){new=aux;}else {new=-10;}let a=[1,2,3,4];let b=[1,2,3]+a[1]+1;let a=[2,3,4,5];let i;let aux;for(aux=0,i=1;i<5;i=i+1){aux=a[i]+aux;}let new;if(aux>10){new=aux;}else {new=-10;}let a=[1,2,3,4];let b=[1,2,3]+a[1]+1;let a=[2,3,4,5];let i;let aux;for(aux=0,i=1;i<5;i=i+1){aux=a[i]+aux;}let new;if(aux>10){new=aux;}else {new=-10;}let a=[1,2,3,4];let b=[1,2,3]+a[1]+1;let a=[2,3,4,5];let i;let aux;for(aux=0,i=1;i<5;i=i+1){aux=a[i]+aux;}let new;if(aux>10){new=aux;}else {new=-10;}let a=[1,2,3,4];let b=[1,2,3]+a[1]+1;let a=[2,3,4,5];let i;let aux;for(aux=0,i=1;i<5;i=i+1){aux=a[i]+aux;}let new;if(aux>10){new=aux;}else {new=-10;}let a=[1,2,3,4];let b=[1,2,3]+a[1]+1;let a=[2,3,4,5];let i;let aux;for(aux=0,i=1;i<5;i=i+1){aux=a[i]+aux;}let new;if(aux>10){new=aux;}else {new=-10;}let a=[1,2,3,4];let b=[1,2,3]+a[1]+1;let a=[2,3,4,5];let i;let aux;for(aux=0,i=1;i<5;i=i+1){aux=a[i]+aux;}let new;if(aux>10){new=aux;}else {new=-10;}let a=[1,2,3,4];let b=[1,2,3]+a[1]+1;let a=[2,3,4,5];let i;let aux;for(aux=0,i=1;i<5;i=i+1){aux=a[i]+aux;}let new;if(aux>10){new=aux;}else {new=-10;}let a=[1,2,3,4];let b=[1,2,3]+a[1]+1;let a=[2,3,4,5];let i;let aux;for(aux=0,i=1;i<5;i=i+1){aux=a[i]+aux;}let new;if(aux>10){new=aux;}else {new=-10;}let a=[1,2,3,4];let b=[1,2,3]+a[1]+1;let a=[2,3,4,5];let i;let aux;for(aux=0,i=1;i<5;i=i+1){aux=a[i]+aux;}let new;if(aux>10){new=aux;}else {new=-10;}let a=[1,2,3,4];let b=[1,2,3]+a[1]+1;";
 
-        Token* tokens = get_tokens();
-        printf("\033[38;5;202mStep[Lexer] ->\033[0m");
-        print_tokens(tokens);
+        if (strlen(s) > 2)
+            make_tokens(s);
+        else
+            make_tokens(gerarCodigo(100000));
+
+        get_tokens();
+
+        // printf("\033[38;5;202mStep[Lexer] ->\033[0m");
+        // print_tokens(tokens);
 
         printf("\033[38;5;202m\nStep[Parser] -> \033[0m");
-        ASTNode* node = execute_recursive_descendent();
 
-        if (node != NULL) {
-            print_ast(node, 0, 1);
-        }
+        execute_recursive_descendent();
 
+        // execute_non_recursive();
+
+        printf("Tokens: %lu\n", get_number_of_tokens());
     }
 }

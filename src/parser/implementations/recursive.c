@@ -10,7 +10,7 @@ ASTNode *create_node_current_token()
 
 ASTNode *handle_program()
 {
-    ASTNode *root = create_node("program", get_undef_token());
+    ASTNode *root = create_node("Program", get_undef_token());
 
     add_child(root, handle_statement_list());
 
@@ -28,7 +28,7 @@ ASTNode *handle_statement_list()
 
 ASTNode *handle_statement()
 {
-
+    ASTNode *root = NULL;
     Token curr_tok = peek_current_token();
     if (curr_tok.subtype == TermIf)
     {
@@ -49,14 +49,11 @@ ASTNode *handle_statement()
     }
     else
     {
-        ASTNode *root = handle_expr();
-
-        add_child(root, create_node_current_token());
+        root = handle_expr();
 
         if (peek_current_token().type == TOKEN_SEMICOLON)
         {
             peek_next_token();
-            return root;
         }
         else
         {
@@ -64,11 +61,13 @@ ASTNode *handle_statement()
             return NULL;
         }
     }
+
+    return root;
 }
 
 ASTNode *handle_statement_list_tail()
 {
-    if (peek_current_token().subtype == TermDefVar || peek_current_token().subtype == TermIdentifier || peek_current_token().subtype == TermWhile || peek_current_token().subtype == TermFor || peek_current_token().subtype == TermIf || peek_current_token().subtype == TermDefVar)
+    if (peek_current_token().subtype == TermIdentifier || peek_current_token().subtype == TermWhile || peek_current_token().subtype == TermFor || peek_current_token().subtype == TermIf || peek_current_token().subtype == TermDefVar)
     {
         ASTNode *root = handle_statement();
         add_child(root, handle_statement_list_tail());
@@ -76,58 +75,57 @@ ASTNode *handle_statement_list_tail()
         return root;
     }
 
-    return create_node("empty", get_undef_token());
+    return NULL;
 }
 
 ASTNode *handle_compound_statement()
 {
+    ASTNode *block_node = create_node("block", get_undef_token());
+
     if (peek_current_token().subtype == TermLbrace)
     {
-        ASTNode *root = create_node_current_token();
-
         peek_next_token();
 
-        add_child(root, handle_statement_list());
+        add_child(block_node, handle_statement_list());
 
         if (peek_current_token().subtype != TermRbrace)
         {
             error_handler("Expected: }");
             return NULL;
         }
-        else
-        {
-            add_child(root, create_node_current_token());
-            peek_next_token();
 
-            return root;
-        }
+        peek_next_token();
     }
     else
     {
         error_handler("Expected: {");
         return NULL;
     }
+
+    return block_node;
 }
 
 ASTNode *handle_expr()
 {
-    if (peek_current_token().subtype == TermIdentifier)
+    ASTNode *node = NULL;
+    Token curr_tok = peek_current_token();
+    if (curr_tok.subtype == TermIdentifier)
     {
-        ASTNode *root = handle_identifier();
+        node = handle_identifier();
 
-        add_child(root, handle_reassign_expr_tail());
-
-        return root;
+        add_child(node, handle_reassign_expr_tail());
     }
     else if (peek_current_token().subtype == TermDefVar)
     {
-        return handle_decl_expr();
+        node = handle_decl_expr();
     }
     else
     {
         error_handler("expected: let | id");
         return NULL;
     }
+
+    return node;
 }
 
 ASTNode *handle_reassign_expr()
@@ -153,29 +151,29 @@ ASTNode *handle_reassign_expr()
     }
     else
     {
-        error_handler("expected: id");
+        error_handler("Expected: Identifier");
         return NULL;
     }
 }
 
 ASTNode *handle_decl_expr()
 {
+    ASTNode *node = NULL;
+
     if (peek_current_token().subtype == TermDefVar)
     {
-        ASTNode *root = create_node_current_token();
+        node = create_node_current_token();
         peek_next_token();
 
         if (peek_current_token().subtype != TermIdentifier)
         {
-            error_handler("expected: id");
+            error_handler("Expected: Identifier");
             return NULL;
         }
         else
         {
-            add_child(root, handle_identifier());
-            add_child(root, handle_decl_expr_assign());
-
-            return root;
+            add_child(node, handle_identifier());
+            add_child(node, handle_decl_expr_assign());
         }
     }
     else
@@ -183,43 +181,38 @@ ASTNode *handle_decl_expr()
         error_handler("expected let");
         return NULL;
     }
+
+    return node;
 }
 
 ASTNode *handle_decl_expr_assign()
 {
+    ASTNode *node = NULL;
     if (peek_current_token().subtype == TermAssign)
     {
-        ASTNode *root = create_node_current_token();
         peek_next_token();
-        add_child(root, handle_arith_expr());
-
-        return root;
+        node = handle_arith_expr();
     }
 
-    return create_node("empty", get_undef_token());
+    return node;
 }
 
 ASTNode *handle_reassign_expr_tail()
 {
     if (peek_current_token().subtype == TermAssign)
     {
-        ASTNode *root = create_node_current_token();
         peek_next_token();
 
-        add_child(root, handle_arith_expr());
+        return handle_arith_expr();
+    }
 
-        return root;
-    }
-    else
-    {
-        return handle_arith_expr_tail();
-    }
+    return handle_arith_expr_tail();
 }
 
 ASTNode *handle_arith_expr()
 {
-    ASTNode *root = handle_term();
-
+    ASTNode *root = create_node("ArithExpr", get_undef_token());
+    add_child(root, handle_term());
     add_child(root, handle_arith_expr_tail());
 
     return root;
@@ -232,7 +225,8 @@ ASTNode *handle_arith_expr_tail()
 
 ASTNode *handle_arith_expr_tail_rest()
 {
-    if (peek_current_token().subtype == TermPlus)
+    Token curr_tok = peek_current_token();
+    if (curr_tok.subtype == TermPlus || curr_tok.subtype == TermMinus)
     {
         ASTNode *root = create_node_current_token();
         peek_next_token();
@@ -243,19 +237,8 @@ ASTNode *handle_arith_expr_tail_rest()
 
         return root;
     }
-    else if (peek_current_token().subtype == TermMinus)
-    {
-        ASTNode *root = create_node_current_token();
-        peek_next_token();
 
-        add_child(root, handle_term());
-
-        add_child(root, handle_arith_expr_tail_rest());
-
-        return root;
-    }
-
-    return create_node("empty", get_undef_token());
+    return NULL;
 }
 
 ASTNode *handle_term()
@@ -274,7 +257,8 @@ ASTNode *handle_term_list()
 
 ASTNode *handle_term_list_tail()
 {
-    if (peek_current_token().subtype == TermMul)
+    Token curr_tok = peek_current_token();
+    if (curr_tok.subtype == TermMul || curr_tok.subtype == TermDiv)
     {
         ASTNode *root = create_node_current_token();
         peek_next_token();
@@ -285,19 +269,8 @@ ASTNode *handle_term_list_tail()
 
         return root;
     }
-    else if (peek_current_token().subtype == TermDiv)
-    {
-        ASTNode *root = create_node_current_token();
-        peek_next_token();
 
-        add_child(root, handle_factor());
-
-        add_child(root, handle_term_list_tail());
-
-        return root;
-    }
-
-    return create_node("empty", get_undef_token());
+    return NULL;
 }
 
 ASTNode *handle_factor()
@@ -307,7 +280,8 @@ ASTNode *handle_factor()
 
 ASTNode *handle_factor_rest()
 {
-    if (peek_current_token().subtype == TermPlus)
+    Token curr_tok = peek_current_token();
+    if (curr_tok.subtype == TermPlus || curr_tok.subtype == TermMinus)
     {
         ASTNode *root = create_node_current_token();
 
@@ -317,20 +291,8 @@ ASTNode *handle_factor_rest()
 
         return root;
     }
-    else if (peek_current_token().subtype == TermMinus)
-    {
-        ASTNode *root = create_node_current_token();
 
-        peek_next_token();
-
-        add_child(root, handle_pow());
-
-        return root;
-    }
-    else
-    {
-        return handle_pow();
-    }
+    return handle_pow();
 }
 
 ASTNode *handle_pow()
@@ -354,7 +316,7 @@ ASTNode *handle_pow_rest()
         return root;
     }
 
-    return create_node("empty", get_undef_token());
+    return NULL;
 }
 
 ASTNode *handle_atom()
@@ -442,7 +404,7 @@ ASTNode *handle_items_array()
         return root;
     }
 
-    return create_node("empty", get_undef_token());
+    return NULL;
 }
 
 ASTNode *handle_items_array_tail()
@@ -460,7 +422,7 @@ ASTNode *handle_items_array_tail()
         return root;
     }
 
-    return create_node("empty", get_undef_token());
+    return NULL;
 }
 
 ASTNode *handle_expr_bool()
@@ -487,12 +449,12 @@ ASTNode *handle_expr_bool_or_rest()
 
         add_child(root, handle_expr_bool_and());
 
-        add_child(root, handle_expr_bool_and_tail());
+        add_child(root, handle_expr_bool_or_rest());
 
         return root;
     }
 
-    return create_node("empty", get_undef_token());
+    return NULL;
 }
 
 ASTNode *handle_expr_bool_and()
@@ -519,7 +481,7 @@ ASTNode *handle_expr_bool_and_tail()
         return root;
     }
 
-    return create_node("empty", get_undef_token());
+    return NULL;
 }
 
 ASTNode *handle_expr_bool_not()
@@ -533,10 +495,8 @@ ASTNode *handle_expr_bool_not()
         add_child(root, handle_expr_bool_not());
         return root;
     }
-    else
-    {
-        return handle_expr_bool_rel();
-    }
+
+    return handle_expr_bool_rel();
 }
 
 ASTNode *handle_expr_bool_rel()
@@ -561,7 +521,7 @@ ASTNode *handle_expr_bool_rel_tail()
         return root;
     }
 
-    return create_node("empty", get_undef_token());
+    return NULL;
 }
 
 ASTNode *handle_expr_bool_rel_factor()
@@ -582,7 +542,7 @@ ASTNode *handle_while_statement()
         return root;
     }
 
-    return create_node("empty", get_undef_token());
+    return NULL;
 }
 
 ASTNode *handle_if_statement()
@@ -601,7 +561,7 @@ ASTNode *handle_if_statement()
         return root;
     }
 
-    return create_node("empty", get_undef_token());
+    return NULL;
 }
 
 ASTNode *handle_else_if_statement_list()
@@ -622,7 +582,7 @@ ASTNode *handle_else_if_statement()
         return root;
     }
 
-    return create_node("empty", get_undef_token());
+    return NULL;
 }
 
 ASTNode *handle_elseif_statement_tail()
@@ -636,7 +596,7 @@ ASTNode *handle_elseif_statement_tail()
         return root;
     }
 
-    return create_node("empty", get_undef_token());
+    return NULL;
 }
 
 ASTNode *handle_else_statement()
@@ -652,7 +612,7 @@ ASTNode *handle_else_statement()
         return root;
     }
 
-    return create_node("empty", get_undef_token());
+    return NULL;
 }
 
 ASTNode *handle_statement_structure()
@@ -752,7 +712,7 @@ ASTNode *handle_for_statement()
         }
     }
 
-    return create_node("empty", get_undef_token());
+    return NULL;
 }
 
 ASTNode *handle_for_expr_bool()
@@ -762,7 +722,7 @@ ASTNode *handle_for_expr_bool()
         return handle_expr_bool();
     }
 
-    return create_node("empty", get_undef_token());
+    return NULL;
 }
 
 ASTNode *handle_assign_expr_list()
@@ -776,7 +736,7 @@ ASTNode *handle_assign_expr_list()
         return root;
     }
 
-    return create_node("empty", get_undef_token());
+    return NULL;
 }
 
 ASTNode *handle_assign_expr_tail()
@@ -794,7 +754,7 @@ ASTNode *handle_assign_expr_tail()
         return root;
     }
 
-    return create_node("empty", get_undef_token());
+    return NULL;
 }
 
 ASTNode *handle_identifier()
@@ -811,7 +771,7 @@ ASTNode *handle_identifier()
     }
     else
     {
-        error_handler("expected id");
+        error_handler("Expected: Identifierentifier");
         return NULL;
     }
 }
@@ -828,7 +788,7 @@ ASTNode *handle_identifier_array()
 
         if (peek_current_token().subtype != TermRbracket)
         {
-            error_handler("expected arrauyyp");
+            error_handler("Expected: ]");
             return NULL;
         }
         else
@@ -841,7 +801,7 @@ ASTNode *handle_identifier_array()
         }
     }
 
-    return create_node("empty", get_undef_token());
+    return NULL;
 }
 
 /*
@@ -999,7 +959,7 @@ void handle_reassign_expr()
     }
     else
     {
-        error_handler("expected: id");
+        error_handler("Expected: Identifier");
         return NULL;
     }
 }
@@ -1013,7 +973,7 @@ void handle_decl_expr()
 
         if (peek_current_token().subtype != TermIdentifier)
         {
-            error_handler("expected: id");
+            error_handler("Expected: Identifier");
             return NULL;
         }
         else
