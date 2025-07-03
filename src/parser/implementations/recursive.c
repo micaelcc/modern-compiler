@@ -1,815 +1,935 @@
 #include "recursive.h"
-extern int success;
-
-ASTNode *create_node_current_token()
+extern Token *TOKENS;
+ParseTree *handle_program()
 {
-    Token t = peek_current_token();
-
-    return create_node(t.value, t);
-}
-
-ASTNode *handle_program()
-{
-    ASTNode *root = create_node("Program", get_undef_token());
-
-    handle_statement_list(root);
-
-    return root;
-}
-
-ASTNode *handle_statement_list(ASTNode *root)
-{
-    add_child(root, handle_statement());
-    return handle_statement_list_tail(root);
-}
-
-ASTNode *handle_statement()
-{
-    ASTNode *root = NULL;
-    Token curr_tok = peek_current_token();
-    if (curr_tok.subtype == TermIf)
+    ParseTree *node = create_parse_tree_node(NonTermProgram, (Token){
+                                                                 TOKEN_UNK,
+                                                                 -1,
+                                                                 NULL});
+    ParseTree *stmt_list = handle_statement_list();
+    if (!stmt_list)
     {
-        return handle_if_statement();
+        return node;
     }
-    else if (curr_tok.subtype == TermWhile)
-    {
-        return handle_while_statement();
-    }
-    else if (curr_tok.subtype == TermFor)
-    {
-        return handle_for_statement();
-    }
-    else if (curr_tok.type == TOKEN_AND || curr_tok.type == TOKEN_ASSIGN || curr_tok.type == TOKEN_COMMA || curr_tok.type == TOKEN_DIV || curr_tok.type == TOKEN_EQ || curr_tok.type == TOKEN_GE || curr_tok.type == TOKEN_GT || curr_tok.type == TOKEN_LBRACE || curr_tok.type == TOKEN_LE || curr_tok.type == TOKEN_LSQUARE || curr_tok.type == TOKEN_LT || curr_tok.type == TOKEN_MUL || curr_tok.type == TOKEN_NE || curr_tok.type == TOKEN_NOT || curr_tok.type == TOKEN_OR || curr_tok.type == TOKEN_RSQUARE || curr_tok.type == TOKEN_RPAREN || curr_tok.type == TOKEN_RBRACE || curr_tok.type == TOKEN_POW)
-    {
-        error_handler("Expected: Expr | If | While | For");
-        return NULL;
-    }
-    else
-    {
-        root = handle_expr();
-
-        if (peek_current_token().type == TOKEN_SEMICOLON)
-        {
-            peek_next_token();
-        }
-        else
-        {
-            error_handler("Expected: ;");
-            return NULL;
-        }
-    }
-
-    return root;
-}
-
-ASTNode *handle_statement_list_tail(ASTNode *root)
-{
-    if (peek_current_token().subtype == TermIdentifier || peek_current_token().subtype == TermWhile || peek_current_token().subtype == TermFor || peek_current_token().subtype == TermIf || peek_current_token().subtype == TermDefVar)
-    {
-        add_child(root, handle_statement());
-
-        return handle_statement_list_tail(root);
-    }
-
-    return root;
-}
-
-ASTNode *handle_compound_statement()
-{
-    ASTNode *block_node = create_node("block", get_undef_token());
-
-    if (peek_current_token().subtype == TermLbrace)
-    {
-        peek_next_token();
-
-        handle_statement_list(block_node);
-
-        if (peek_current_token().subtype != TermRbrace)
-        {
-            error_handler("Expected: }");
-            return NULL;
-        }
-
-        peek_next_token();
-    }
-    else
-    {
-        error_handler("Expected: {");
-        return NULL;
-    }
-
-    return block_node;
-}
-
-ASTNode *handle_expr()
-{
-    ASTNode *node = NULL;
-    Token curr_tok = peek_current_token();
-    if (curr_tok.subtype == TermIdentifier)
-    {
-        node = handle_reassign_expr_tail(handle_identifier());
-    }
-    else if (peek_current_token().subtype == TermDefVar)
-    {
-        node = handle_decl_expr();
-    }
-    else
-    {
-        error_handler("expected: let | id");
-        return NULL;
-    }
+    add_child_back(node, stmt_list);
 
     return node;
 }
 
-ASTNode *handle_reassign_expr()
+ParseTree *handle_statement_list()
 {
+
+    ParseTree *node = create_parse_tree_node(NonTermStatementList, (Token){
+                                                                       TOKEN_UNK,
+                                                                       -1,
+                                                                       NULL});
+    ParseTree *stmt = handle_statement();
+    if (!stmt)
+    {
+        return node;
+    }
+    add_child_back(node, stmt);
+    ParseTree *tail = handle_statement_list_tail();
+    if (tail)
+        add_child_back(node, tail);
+
+    return node;
+}
+
+ParseTree *handle_statement_list_tail()
+{
+
+    Token tok = peek_current_token();
+    if (tok.subtype == TermDefVar || tok.subtype == TermIdentifier || tok.subtype == TermWhile ||
+        tok.subtype == TermFor || tok.subtype == TermIf)
+    {
+        ParseTree *node = create_parse_tree_node(NonTermStatementListTail, (Token){
+                                                                               TOKEN_UNK,
+                                                                               -1,
+                                                                               NULL});
+        add_child_back(node, handle_statement());
+        add_child_back(node, handle_statement_list_tail());
+
+        return node;
+    }
+    return NULL;
+}
+
+ParseTree *handle_statement()
+{
+
+    Token tok = peek_current_token();
+    if (tok.subtype == TermIf)
+        return handle_if_statement();
+    if (tok.subtype == TermWhile)
+        return handle_while_statement();
+    if (tok.subtype == TermFor)
+        return handle_for_statement();
+
+    ParseTree *node = create_parse_tree_node(NonTermStatement, (Token){
+                                                                   TOKEN_UNK,
+                                                                   -1,
+                                                                   NULL});
+    ParseTree *expr = handle_expr();
+    if (!expr)
+    {
+        free_parse_tree(node);
+        return NULL;
+    }
+    add_child_back(node, expr);
+
+    if (peek_current_token().type == TOKEN_SEMICOLON)
+    {
+        Token semi = peek_current_token();
+        peek_next_token();
+        add_child_back(node, create_parse_tree_node(TermSemi, semi));
+
+        return node;
+    }
+    else
+    {
+        error_handler("Expected: ;");
+        free_parse_tree(node);
+        return NULL;
+    }
+}
+
+ParseTree *handle_if_statement()
+{
+
+    Token tok = peek_current_token();
+    peek_next_token();
+    ParseTree *node = create_parse_tree_node(NonTermIfStatement, (Token){
+                                                                     TOKEN_UNK,
+                                                                     -1,
+                                                                     NULL});
+    add_child_back(node, create_parse_tree_node(TermIf, tok));
+    add_child_back(node, handle_statement_structure());
+    ParseTree *elseifs = handle_else_if_statement_list();
+    if (elseifs)
+        add_child_back(node, elseifs);
+    ParseTree *els = handle_else_statement();
+    if (els)
+        add_child_back(node, els);
+
+    return node;
+}
+
+ParseTree *handle_else_if_statement_list()
+{
+    return handle_elseif_statement_tail();
+}
+
+ParseTree *handle_else_if_statement()
+{
+
+    Token tok = peek_current_token();
+    peek_next_token();
+    ParseTree *node = create_parse_tree_node(NonTermElseifStatement, (Token){
+                                                                         TOKEN_UNK,
+                                                                         -1,
+                                                                         NULL});
+    add_child_back(node, create_parse_tree_node(TermElseIf, tok));
+    add_child_back(node, handle_statement_structure());
+
+    return node;
+}
+
+ParseTree *handle_elseif_statement_tail()
+{
+
+    Token tok = peek_current_token();
+    if (tok.subtype == TermElseIf)
+    {
+        ParseTree *node = create_parse_tree_node(NonTermElseifStatementTail, (Token){
+                                                                                 TOKEN_UNK,
+                                                                                 -1,
+                                                                                 NULL});
+        add_child_back(node, handle_else_if_statement());
+        ParseTree *tail = handle_elseif_statement_tail();
+        if (tail)
+            add_child_back(node, tail);
+
+        return node;
+    }
+
+    return NULL;
+}
+
+ParseTree *handle_else_statement()
+{
+
+    Token tok = peek_current_token();
+    if (tok.subtype != TermElse)
+        return NULL;
+    peek_next_token();
+    ParseTree *node = create_parse_tree_node(NonTermElseStatement, (Token){
+                                                                       TOKEN_UNK,
+                                                                       -1,
+                                                                       NULL});
+    add_child_back(node, create_parse_tree_node(TermElse, tok));
+    add_child_back(node, handle_compound_statement());
+
+    return node;
+}
+
+ParseTree *handle_statement_structure()
+{
+
+    Token lparen = peek_current_token();
+    if (lparen.subtype != TermLparen)
+    {
+        error_handler("Expected: (");
+        return NULL;
+    }
+    peek_next_token();
+
+    ParseTree *node = create_parse_tree_node(NonTermStatementStructure, (Token){
+                                                                            TOKEN_UNK,
+                                                                            -1,
+                                                                            NULL});
+    add_child_back(node, create_parse_tree_node(TermLparen, lparen));
+    add_child_back(node, handle_expr_bool());
+
+    Token rparen = peek_current_token();
+    if (rparen.subtype != TermRparen)
+    {
+        error_handler("Expected: )");
+        free_parse_tree(node);
+        return NULL;
+    }
+    peek_next_token();
+    add_child_back(node, create_parse_tree_node(TermRparen, rparen));
+
+    add_child_back(node, handle_compound_statement());
+
+    return node;
+}
+
+ParseTree *handle_arith_expr()
+{
+
+    ParseTree *node = create_parse_tree_node(NonTermArithExpr, peek_current_token());
+    add_child_back(node, handle_term());
+    add_child_back(node, handle_arith_expr_tail());
+
+    return node;
+}
+
+ParseTree *handle_reassign()
+{
+
+    ParseTree *node = create_parse_tree_node(NonTermReassignExpr, peek_current_token());
+
     if (peek_current_token().subtype == TermIdentifier)
     {
-        ASTNode *r = create_node("=", get_undef_token());
-        add_child(r, handle_identifier());
+        add_child_back(node, handle_identifier());
 
         if (peek_current_token().subtype != TermAssign)
         {
-            error_handler("expected: = assign");
-            return NULL;
+            error_handler((char *)"Expected: =");
         }
         else
         {
+            add_child_back(node, create_parse_tree_node(TermAssign, peek_current_token()));
             peek_next_token();
-
-            add_child(r, handle_arith_expr());
-
-            return r;
+            add_child_back(node, handle_arith_expr());
         }
     }
     else
     {
-        error_handler("Expected: Identifier");
-        return NULL;
-    }
-}
-
-ASTNode *handle_decl_expr()
-{
-    ASTNode *node = NULL;
-
-    if (peek_current_token().subtype == TermDefVar)
-    {
-        node = create_node_current_token();
-        peek_next_token();
-
-        if (peek_current_token().subtype != TermIdentifier)
-        {
-            error_handler("Expected: Identifier");
-            return NULL;
-        }
-        else
-        {
-            add_child(node, handle_identifier());
-            add_child(node, handle_decl_expr_assign());
-        }
-    }
-    else
-    {
-        error_handler("expected let");
-        return NULL;
+        error_handler((char *)"Expected: Identifier");
     }
 
     return node;
 }
 
-ASTNode *handle_decl_expr_assign()
-{
-    ASTNode *node = NULL;
-    if (peek_current_token().subtype == TermAssign)
-    {
-        peek_next_token();
-        node = handle_arith_expr();
-    }
-
-    return node;
-}
-
-ASTNode *handle_reassign_expr_tail(ASTNode *lhs)
-{
-    if (peek_current_token().subtype == TermAssign)
-    {
-        ASTNode *root = create_node_current_token();
-
-        peek_next_token();
-
-        add_child(root, lhs);
-        add_child(root, handle_arith_expr());
-
-        return root;
-    }
-
-    return handle_arith_expr_tail();
-}
-
-ASTNode *handle_arith_expr()
-{
-    return handle_arith_expr_tail(handle_term());
-}
-
-ASTNode *handle_arith_expr_tail(ASTNode *term)
-{
-    return handle_arith_expr_tail_rest(term);
-}
-
-ASTNode *handle_arith_expr_tail_rest(ASTNode *lhs)
-{
-    Token curr_tok = peek_current_token();
-    if (curr_tok.subtype == TermPlus || curr_tok.subtype == TermMinus)
-    {
-        ASTNode *root = create_node_current_token();
-        peek_next_token();
-
-        ASTNode *rhs = handle_term();
-
-        add_child(root, lhs);
-        add_child(root, rhs);
-
-        return handle_arith_expr_tail_rest(root);
-    }
-
-    return lhs;
-}
-
-ASTNode *handle_term()
-{
-    return handle_term_list(handle_factor());
-    // ASTNode *root = handle_factor();
-
-    // add_child(root, handle_term_list());
-
-    // return root;
-}
-
-ASTNode *handle_term_list(ASTNode *lhs)
-{
-    return handle_term_list_tail(lhs);
-}
-
-ASTNode *handle_term_list_tail(ASTNode *lhs)
-{
-    Token curr_tok = peek_current_token();
-    if (curr_tok.subtype == TermMul || curr_tok.subtype == TermDiv)
-    {
-        ASTNode *root = create_node_current_token();
-        peek_next_token();
-
-        ASTNode *rhs = handle_factor();
-        add_child(root, lhs);
-        add_child(root, rhs);
-
-        return handle_term_list_tail(root);
-    }
-
-    return lhs;
-}
-
-ASTNode *handle_factor()
-{
-    return handle_factor_rest();
-}
-
-ASTNode *handle_factor_rest()
-{
-    Token curr_tok = peek_current_token();
-
-    if (curr_tok.subtype == TermPlus || curr_tok.subtype == TermMinus)
-    {
-        ASTNode *root = create_node_current_token();
-
-        peek_next_token();
-
-        add_child(root, handle_pow());
-
-        return root;
-    }
-
-    return handle_pow();
-}
-
-ASTNode *handle_pow()
-{
-    return handle_pow_rest(handle_atom());
-}
-
-ASTNode *handle_pow_rest(ASTNode *lhs)
-{
-    if (peek_current_token().subtype == TermPow)
-    {
-        ASTNode *root = create_node_current_token();
-
-        peek_next_token();
-
-        add_child(root, lhs);
-        add_child(root, handle_pow());
-
-        return root;
-    }
-
-    return lhs;
-}
-
-ASTNode *handle_atom()
-{
-    if (peek_current_token().subtype == TermIdentifier)
-    {
-        return handle_identifier();
-    }
-    else if (peek_current_token().subtype == TermInteger || peek_current_token().subtype == TermFloat || peek_current_token().subtype == TermString)
-    {
-        ASTNode *root = create_node_current_token();
-
-        peek_next_token();
-
-        return root;
-    }
-    else if (peek_current_token().subtype == TermLparen)
-    {
-        ASTNode *root = create_node_current_token();
-
-        peek_next_token();
-
-        add_child(root, handle_arith_expr());
-
-        if (peek_current_token().subtype != TermRparen)
-        {
-            error_handler("expected: )");
-            return NULL;
-        }
-        else
-        {
-            add_child(root, create_node_current_token());
-            peek_next_token();
-            return root;
-        }
-    }
-    else if (peek_current_token().subtype == TermLbracket)
-    {
-        return handle_array();
-    }
-    else
-    {
-        error_handler("expected Atom");
-        return NULL;
-    }
-}
-
-ASTNode *handle_array()
-{
-    if (peek_current_token().subtype == TermLbracket)
-    {
-        ASTNode *root = create_node("[]", peek_current_token());
-
-        peek_next_token();
-        handle_items_array(root);
-
-        if (peek_current_token().subtype != TermRbracket)
-        {
-            error_handler("expected: []");
-            return NULL;
-        }
-        else
-        {
-            peek_next_token();
-
-            return root;
-        }
-    }
-    else
-    {
-        error_handler("expected: ]");
-        return NULL;
-    }
-}
-
-ASTNode *handle_items_array(ASTNode *root)
-{
-    if (peek_current_token().subtype == TermLbracket || peek_current_token().subtype == TermLparen || peek_current_token().subtype == TermInteger || peek_current_token().subtype == TermFloat || peek_current_token().subtype == TermString || peek_current_token().subtype == TermIdentifier)
-    {
-        add_child(root, handle_atom());
-
-        return handle_items_array_tail(root);
-    }
-
-    return root;
-}
-
-ASTNode *handle_items_array_tail(ASTNode *root)
-{
-    if (peek_current_token().subtype == TermComma)
-    {
-        peek_next_token();
-
-        add_child(root, handle_atom());
-
-        return handle_items_array_tail(root);
-    }
-
-    return root;
-}
-
-ASTNode *handle_expr_bool()
+ParseTree *handle_expr_bool()
 {
     return handle_expr_bool_or();
 }
 
-ASTNode *handle_expr_bool_or()
+ParseTree *handle_compound_statement()
 {
-    return handle_expr_bool_or_rest(handle_expr_bool_and());
-}
 
-ASTNode *handle_expr_bool_or_rest(ASTNode *lhs)
-{
-    if (peek_current_token().subtype == TermOr)
+    ParseTree *node = create_parse_tree_node(NonTermCompoundStatement, peek_current_token());
+
+    if (peek_current_token().subtype == TermLbrace)
     {
-        ASTNode *root = create_node_current_token();
-        peek_next_token();
-        ASTNode *rhs = handle_expr_bool_and();
-        add_child(root, lhs);
-        add_child(root, handle_expr_bool_or_rest(rhs));
-        return root;
-    }
-    return lhs;
-}
-
-ASTNode *handle_expr_bool_and()
-{
-    ASTNode *lhs = handle_expr_bool_not();
-    return handle_expr_bool_and_tail(lhs);
-}
-
-ASTNode *handle_expr_bool_and_tail(ASTNode *lhs)
-{
-    if (peek_current_token().subtype == TermAnd)
-    {
-        ASTNode *root = create_node_current_token();
-        peek_next_token();
-        ASTNode *rhs = handle_expr_bool_not();
-        add_child(root, lhs);
-        add_child(root, handle_expr_bool_and_tail(rhs));
-        return root;
-    }
-    return lhs;
-}
-ASTNode *handle_expr_bool_not()
-{
-    if (peek_current_token().subtype == TermNot)
-    {
-        ASTNode *root = create_node_current_token();
-        peek_next_token();
-        add_child(root, handle_expr_bool_not());
-        return root;
-    }
-    return handle_expr_bool_rel();
-}
-
-ASTNode *handle_expr_bool_rel()
-{
-    ASTNode *lhs = handle_arith_expr();
-    return handle_expr_bool_rel_tail(lhs);
-}
-
-ASTNode *handle_expr_bool_rel_tail(ASTNode *lhs)
-{
-    Token curr_tok = peek_current_token();
-    if (curr_tok.subtype == TermLe || curr_tok.subtype == TermGe || curr_tok.subtype == TermGt || curr_tok.subtype == TermLt || curr_tok.subtype == TermNe || curr_tok.subtype == TermEq)
-    {
-        ASTNode *root = create_node_current_token();
-        peek_next_token();
-        ASTNode *rhs = handle_arith_expr();
-        add_child(root, lhs);
-        add_child(root, rhs);
-        return root;
-    }
-    return lhs;
-}
-
-ASTNode *handle_expr_bool_rel_factor()
-{
-    return handle_arith_expr();
-}
-
-ASTNode *handle_while_statement()
-{
-    if (peek_current_token().subtype == TermWhile)
-    {
-        ASTNode *root = create_node_current_token();
-
+        add_child_back(node, create_parse_tree_node(TermLbrace, peek_current_token()));
         peek_next_token();
 
-        add_child(root, handle_statement_structure());
+        add_child_back(node, handle_statement_list());
 
-        return root;
-    }
-
-    return NULL;
-}
-
-ASTNode *handle_if_statement()
-{
-    if (peek_current_token().subtype == TermIf)
-    {
-        ASTNode *root = create_node_current_token();
-
-        peek_next_token();
-
-        handle_statement_structure(root);
-        handle_else_if_statement_list(root);
-
-        handle_else_statement(root);
-
-        return root;
-    }
-
-    return NULL;
-}
-
-ASTNode *handle_else_if_statement_list(ASTNode *root)
-{
-    return handle_elseif_statement_tail(root);
-}
-
-ASTNode *handle_else_if_statement()
-{
-    if (peek_current_token().subtype == TermElseIf)
-    {
-        ASTNode *root = create_node_current_token();
-
-        peek_next_token();
-
-        handle_statement_structure(root);
-
-        return root;
-    }
-
-    return NULL;
-}
-
-ASTNode *handle_elseif_statement_tail(ASTNode *root)
-{
-    if (peek_current_token().subtype == TermElseIf)
-    {
-        add_child(root, handle_else_if_statement());
-
-        return handle_elseif_statement_tail(root);
-    }
-
-    return root;
-}
-
-ASTNode *handle_else_statement(ASTNode *root)
-{
-    if (peek_current_token().subtype == TermElse)
-    {
-        ASTNode *root_else = create_node_current_token();
-
-        peek_next_token();
-
-        add_child(root_else, handle_compound_statement());
-        add_child(root, root_else);
-        return root;
-    }
-
-    return NULL;
-}
-
-ASTNode *handle_statement_structure(ASTNode *root)
-{
-    if (peek_current_token().subtype == TermLparen)
-    {
-        peek_next_token();
-
-        add_child(root, handle_expr_bool());
-
-        if (peek_current_token().subtype != TermRparen)
+        if (peek_current_token().subtype != TermRbrace)
         {
-            error_handler("expected:)");
-            return NULL;
+            err_expected(RBRACE, peek_current_token().value);
+            return node;
         }
         else
         {
+            add_child_back(node, create_parse_tree_node(TermRbrace, peek_current_token()));
             peek_next_token();
-
-            add_child(root, handle_compound_statement());
-
-            return root;
         }
     }
     else
     {
-        error_handler("expected :(");
-        return NULL;
+        err_expected(LBRACE, peek_current_token().value);
     }
+
+    return node;
 }
 
-ASTNode *handle_for_statement()
+ParseTree *handle_expr()
 {
+
+    ParseTree *node = create_parse_tree_node(NonTermExpr, peek_current_token());
+
+    if (peek_current_token().subtype == TermIdentifier)
+    {
+        add_child_back(node, handle_identifier());
+        add_child_back(node, handle_reassign_expr_tail());
+    }
+    else if (peek_current_token().subtype == TermDefVar)
+    {
+        add_child_back(node, handle_decl_expr());
+    }
+    else
+    {
+        error_handler((char *)"Expected: let | id");
+    }
+
+    return node;
+}
+
+ParseTree *handle_while_statement()
+{
+
+    ParseTree *node = create_parse_tree_node(NonTermWhileStatement, peek_current_token());
+
+    if (peek_current_token().subtype == TermWhile)
+    {
+        add_child_back(node, create_parse_tree_node(TermWhile, peek_current_token()));
+        peek_next_token();
+        add_child_back(node, handle_statement_structure());
+    }
+
+    return node;
+}
+
+ParseTree *handle_arith_expr_tail()
+{
+
+    ParseTree *node = create_parse_tree_node(NonTermArithExprTail, peek_current_token());
+    add_child_back(node, handle_arith_expr_tail_rest());
+
+    return node;
+}
+
+ParseTree *handle_expr_bool_or()
+{
+
+    ParseTree *node = create_parse_tree_node(NonTermExprBoolOr, peek_current_token());
+    add_child_back(node, handle_expr_bool_and());
+    add_child_back(node, handle_expr_bool_or_rest());
+
+    return node;
+}
+
+ParseTree *handle_reassign_expr_tail()
+{
+
+    ParseTree *node = create_parse_tree_node(NonTermReassignExprTail, peek_current_token());
+
+    if (peek_current_token().subtype == TermAssign)
+    {
+        add_child_back(node, create_parse_tree_node(TermAssign, peek_current_token()));
+        peek_next_token();
+        add_child_back(node, handle_arith_expr());
+    }
+    else
+    {
+        add_child_back(node, handle_arith_expr_tail());
+    }
+
+    return node;
+}
+
+ParseTree *handle_decl_expr()
+{
+
+    ParseTree *node = create_parse_tree_node(NonTermDeclExpr, peek_current_token());
+
+    if (peek_current_token().subtype == TermDefVar)
+    {
+        add_child_back(node, create_parse_tree_node(TermDefVar, peek_current_token()));
+        peek_next_token();
+
+        if (peek_current_token().subtype != TermIdentifier)
+        {
+            error_handler((char *)"Expected: Identifier");
+        }
+        else
+        {
+            add_child_back(node, handle_identifier());
+            add_child_back(node, handle_decl_expr_assign());
+        }
+    }
+    else
+    {
+        error_handler((char *)"Expected: let");
+    }
+
+    return node;
+}
+
+ParseTree *handle_reassign_expr()
+{
+    Token curr_token = peek_current_token();
+    ParseTree *node = create_parse_tree_node(NonTermReassignExpr, curr_token);
+
+    if (curr_token.subtype == TermIdentifier)
+    {
+        add_child_back(node, handle_identifier());
+
+        if (peek_current_token().subtype != TermAssign)
+        {
+            err_expected(ASSIGN, peek_current_token().value);
+        }
+        else
+        {
+            add_child_back(node, create_parse_tree_node(TermAssign, peek_current_token()));
+            peek_next_token();
+            add_child_back(node, handle_arith_expr());
+        }
+    }
+    else
+    {
+        err_expected(ID, peek_current_token().value);
+    }
+
+    return node;
+}
+
+ParseTree *handle_term()
+{
+
+    ParseTree *node = create_parse_tree_node(NonTermTerm, peek_current_token());
+    add_child_back(node, handle_factor());
+    add_child_back(node, handle_term_list());
+
+    return node;
+}
+
+ParseTree *handle_term_list()
+{
+
+    ParseTree *node = create_parse_tree_node(NonTermTermList, peek_current_token());
+    add_child_back(node, handle_term_list_tail());
+
+    return node;
+}
+
+ParseTree *handle_term_list_tail()
+{
+
+    ParseTree *node = create_parse_tree_node(NonTermTermListTail, peek_current_token());
+
+    if (peek_current_token().subtype == TermMul || peek_current_token().subtype == TermDiv)
+    {
+        int op = peek_current_token().subtype;
+        add_child_back(node, create_parse_tree_node(op, peek_current_token()));
+        peek_next_token();
+        add_child_back(node, handle_factor());
+        add_child_back(node, handle_term_list_tail());
+    }
+
+    return node;
+}
+
+ParseTree *handle_expr_bool_and()
+{
+
+    ParseTree *node = create_parse_tree_node(NonTermExprBoolAnd, peek_current_token());
+    add_child_back(node, handle_expr_bool_not());
+    add_child_back(node, handle_expr_bool_and_tail());
+
+    return node;
+}
+
+ParseTree *handle_expr_bool_or_rest()
+{
+
+    ParseTree *node = create_parse_tree_node(NonTermExprBoolOrRest, peek_current_token());
+
+    if (peek_current_token().subtype == TermOr)
+    {
+        add_child_back(node, create_parse_tree_node(TermOr, peek_current_token()));
+        peek_next_token();
+        add_child_back(node, handle_expr_bool_and());
+        add_child_back(node, handle_expr_bool_or_rest());
+    }
+
+    return node;
+}
+
+ParseTree *handle_decl_expr_assign()
+{
+
+    ParseTree *node = create_parse_tree_node(NonTermDeclExprAssign, peek_current_token());
+
+    if (peek_current_token().subtype == TermAssign)
+    {
+        add_child_back(node, create_parse_tree_node(TermAssign, peek_current_token()));
+        peek_next_token();
+        add_child_back(node, handle_arith_expr());
+    }
+
+    return node;
+}
+
+ParseTree *handle_expr_bool_not()
+{
+
+    ParseTree *node = create_parse_tree_node(NonTermExprBoolNot, peek_current_token());
+
+    if (peek_current_token().subtype == TermNot)
+    {
+        add_child_back(node, create_parse_tree_node(TermNot, peek_current_token()));
+        peek_next_token();
+        add_child_back(node, handle_expr_bool_not());
+    }
+    else
+    {
+        add_child_back(node, handle_expr_bool_rel());
+    }
+
+    return node;
+}
+
+ParseTree *handle_expr_bool_rel()
+{
+
+    ParseTree *node = create_parse_tree_node(NonTermExprBoolRel, peek_current_token());
+    add_child_back(node, handle_arith_expr());
+    add_child_back(node, handle_expr_bool_rel_tail());
+
+    return node;
+}
+
+ParseTree *handle_expr_bool_rel_tail()
+{
+
+    ParseTree *node = create_parse_tree_node(NonTermExprBoolRelTail, peek_current_token());
+
+    if (peek_current_token().subtype == TermLe || peek_current_token().subtype == TermGe ||
+        peek_current_token().subtype == TermGt || peek_current_token().subtype == TermLt ||
+        peek_current_token().subtype == TermNe || peek_current_token().subtype == TermEq)
+    {
+        int op = peek_current_token().subtype;
+        add_child_back(node, create_parse_tree_node(op, peek_current_token()));
+        peek_next_token();
+        add_child_back(node, handle_arith_expr());
+    }
+
+    return node;
+}
+
+ParseTree *handle_expr_bool_rel_factor()
+{
+
+    ParseTree *node = create_parse_tree_node(NonTermExprBoolRelFactor, peek_current_token());
+    add_child_back(node, handle_arith_expr());
+
+    return node;
+}
+
+ParseTree *handle_factor()
+{
+
+    ParseTree *node = create_parse_tree_node(NonTermFactor, peek_current_token());
+    add_child_back(node, handle_factor_rest());
+
+    return node;
+}
+
+ParseTree *handle_factor_rest()
+{
+
+    ParseTree *node = create_parse_tree_node(NonTermFactorRest, peek_current_token());
+
+    if (peek_current_token().subtype == TermPlus || peek_current_token().subtype == TermMinus)
+    {
+        int op = peek_current_token().subtype;
+        add_child_back(node, create_parse_tree_node(op, peek_current_token()));
+        peek_next_token();
+        add_child_back(node, handle_pow());
+    }
+    else
+    {
+        add_child_back(node, handle_pow());
+    }
+
+    return node;
+}
+
+ParseTree *handle_pow()
+{
+
+    ParseTree *node = create_parse_tree_node(NonTermPow, peek_current_token());
+    add_child_back(node, handle_atom());
+    add_child_back(node, handle_pow_rest());
+
+    return node;
+}
+
+ParseTree *handle_pow_rest()
+{
+
+    ParseTree *node = create_parse_tree_node(NonTermPowRest, peek_current_token());
+
+    if (peek_current_token().subtype == TermPow)
+    {
+        add_child_back(node, create_parse_tree_node(TermPow, peek_current_token()));
+        peek_next_token();
+        add_child_back(node, handle_pow());
+    }
+
+    return node;
+}
+
+ParseTree *handle_atom()
+{
+
+    ParseTree *node = create_parse_tree_node(NonTermAtom, peek_current_token());
+
+    if (peek_current_token().subtype == TermIdentifier)
+    {
+        add_child_back(node, handle_identifier());
+    }
+    else if (peek_current_token().subtype == TermInteger || peek_current_token().subtype == TermFloat || peek_current_token().subtype == TermString)
+    {
+        add_child_back(node, create_parse_tree_node(peek_current_token().subtype, peek_current_token()));
+        peek_next_token();
+    }
+    else if (peek_current_token().subtype == TermLparen)
+    {
+        add_child_back(node, create_parse_tree_node(TermLparen, peek_current_token()));
+        peek_next_token();
+        add_child_back(node, handle_arith_expr());
+
+        if (peek_current_token().subtype != TermRparen)
+        {
+            error_handler((char *)"Expected: )");
+        }
+        else
+        {
+            add_child_back(node, create_parse_tree_node(TermRparen, peek_current_token()));
+            peek_next_token();
+        }
+    }
+    else if (peek_current_token().subtype == TermLbracket)
+    {
+        add_child_back(node, handle_array());
+    }
+    else
+    {
+        error_handler((char *)"Expected: Atom");
+    }
+
+    return node;
+}
+
+ParseTree *handle_array()
+{
+
+    ParseTree *node = create_parse_tree_node(NonTermArray, peek_current_token());
+
+    if (peek_current_token().subtype == TermLbracket)
+    {
+        add_child_back(node, create_parse_tree_node(TermLbracket, peek_current_token()));
+        peek_next_token();
+
+        add_child_back(node, handle_items_array());
+
+        if (peek_current_token().subtype != TermRbracket)
+        {
+            error_handler((char *)"Expected: ]");
+        }
+        else
+        {
+            add_child_back(node, create_parse_tree_node(TermRbracket, peek_current_token()));
+            peek_next_token();
+        }
+    }
+    else
+    {
+        error_handler((char *)"Expected: [");
+    }
+
+    return node;
+}
+
+ParseTree *handle_items_array()
+{
+
+    ParseTree *node = create_parse_tree_node(NonTermItemsArray, peek_current_token());
+
+    if (peek_current_token().subtype == TermLbracket || peek_current_token().subtype == TermLparen ||
+        peek_current_token().subtype == TermInteger || peek_current_token().subtype == TermFloat ||
+        peek_current_token().subtype == TermString || peek_current_token().subtype == TermIdentifier)
+    {
+        add_child_back(node, handle_atom());
+        add_child_back(node, handle_items_array_tail());
+    }
+
+    return node;
+}
+
+ParseTree *handle_items_array_tail()
+{
+
+    ParseTree *node = create_parse_tree_node(NonTermItemsArrayTail, peek_current_token());
+
+    if (peek_current_token().subtype == TermComma)
+    {
+        add_child_back(node, create_parse_tree_node(TermComma, peek_current_token()));
+        peek_next_token();
+        add_child_back(node, handle_atom());
+        add_child_back(node, handle_items_array_tail());
+    }
+
+    return node;
+}
+ParseTree *handle_for_statement()
+{
+
+    ParseTree *node = create_parse_tree_node(NonTermForStatement, peek_current_token());
+
     if (peek_current_token().subtype == TermFor)
     {
-        ASTNode *root = create_node_current_token();
-
+        add_child_back(node, create_parse_tree_node(TermFor, peek_current_token()));
         peek_next_token();
 
         if (peek_current_token().subtype != TermLparen)
         {
-            error_handler("expected: ()");
-            return NULL;
+            error_handler((char *)"Expected: (");
+            return node;
         }
-        else
+
+        add_child_back(node, create_parse_tree_node(TermLparen, peek_current_token()));
+        peek_next_token();
+
+        add_child_back(node, handle_assign_expr_list());
+
+        if (peek_current_token().subtype != TermSemi)
         {
-            peek_next_token();
-            ASTNode *assigns_node = create_node("assigns", get_undef_token());
-
-            handle_assign_expr_list(assigns_node);
-
-            add_child(root, assigns_node);
-            if (peek_current_token().subtype != TermSemi)
-            {
-                error_handler("expected: ; 2");
-                return NULL;
-            }
-            else
-            {
-                peek_next_token();
-                ASTNode *exprs_node = create_node("expr", get_undef_token());
-                add_child(exprs_node, handle_for_expr_bool());
-                add_child(root, exprs_node);
-                if (peek_current_token().subtype != TermSemi)
-                {
-                    error_handler("expected: ; 3");
-                    return NULL;
-                }
-                else
-                {
-                    peek_next_token();
-
-                    ASTNode *assigns_node = create_node("assigns", get_undef_token());
-
-                    handle_assign_expr_list(assigns_node);
-                    add_child(root, assigns_node);
-
-                    if (peek_current_token().subtype != TermRparen)
-                    {
-                        error_handler("expected: )");
-                        return NULL;
-                    }
-                    else
-                    {
-                        peek_next_token();
-                        add_child(root, handle_compound_statement());
-
-                        return root;
-                    }
-                }
-            }
+            error_handler((char *)"Expected: ;");
+            return node;
         }
+
+        add_child_back(node, create_parse_tree_node(TermSemi, peek_current_token()));
+        peek_next_token();
+
+        add_child_back(node, handle_for_expr_bool());
+
+        if (peek_current_token().subtype != TermSemi)
+        {
+            error_handler((char *)"Expected: ;");
+            return node;
+        }
+
+        add_child_back(node, create_parse_tree_node(TermSemi, peek_current_token()));
+        peek_next_token();
+
+        add_child_back(node, handle_assign_expr_list());
+
+        if (peek_current_token().subtype != TermRparen)
+        {
+            error_handler((char *)"Expected: )");
+            return node;
+        }
+
+        add_child_back(node, create_parse_tree_node(TermRparen, peek_current_token()));
+        peek_next_token();
+
+        add_child_back(node, handle_compound_statement());
     }
 
-    return NULL;
+    return node;
 }
 
-ASTNode *handle_for_expr_bool()
+ParseTree *handle_for_expr_bool()
 {
-    if (peek_current_token().subtype == TermNot || peek_current_token().subtype == TermLbracket || peek_current_token().subtype == TermLparen || peek_current_token().subtype == TermInteger || peek_current_token().subtype == TermFloat || peek_current_token().subtype == TermString || peek_current_token().subtype == TermIdentifier)
+
+    ParseTree *node = create_parse_tree_node(NonTermForExprBool, peek_current_token());
+
+    if (peek_current_token().subtype == TermNot || peek_current_token().subtype == TermLbracket || peek_current_token().subtype == TermLparen ||
+        peek_current_token().subtype == TermInteger || peek_current_token().subtype == TermFloat || peek_current_token().subtype == TermString ||
+        peek_current_token().subtype == TermIdentifier)
     {
-        return handle_expr_bool();
+        add_child_back(node, handle_expr_bool());
     }
 
-    return NULL;
+    return node;
 }
 
-ASTNode *handle_assign_expr_list(ASTNode *assigns_node)
+ParseTree *handle_arith_expr_tail_rest()
 {
+
+    ParseTree *node = create_parse_tree_node(NonTermArithExprTailRest, peek_current_token());
+
+    if (peek_current_token().subtype == TermPlus || peek_current_token().subtype == TermMinus)
+    {
+        int op = peek_current_token().subtype;
+        add_child_back(node, create_parse_tree_node(op, peek_current_token()));
+        peek_next_token();
+        add_child_back(node, handle_term());
+        add_child_back(node, handle_arith_expr_tail_rest());
+    }
+
+    return node;
+}
+
+ParseTree *handle_expr_bool_and_tail()
+{
+
+    ParseTree *node = create_parse_tree_node(NonTermExprBoolAndTail, peek_current_token());
+
+    if (peek_current_token().subtype == TermAnd)
+    {
+        add_child_back(node, create_parse_tree_node(TermAnd, peek_current_token()));
+        peek_next_token();
+        add_child_back(node, handle_expr_bool_not());
+        add_child_back(node, handle_expr_bool_and_tail());
+    }
+
+    return node;
+}
+
+ParseTree *handle_assign_expr_list()
+{
+
+    ParseTree *node = create_parse_tree_node(NonTermAssignExprList, peek_current_token());
+
     if (peek_current_token().subtype == TermIdentifier)
     {
-        add_child(assigns_node, handle_reassign_expr());
-
-        handle_assign_expr_tail(assigns_node);
-
-        return assigns_node;
+        add_child_back(node, handle_reassign_expr());
+        add_child_back(node, handle_assign_expr_tail());
     }
 
-    return NULL;
+    return node;
 }
 
-ASTNode *handle_assign_expr_tail(ASTNode *assigns_node)
+ParseTree *handle_assign_expr_tail()
 {
+
+    ParseTree *node = create_parse_tree_node(NonTermAssignExprTail, peek_current_token());
+
     if (peek_current_token().subtype == TermComma)
     {
+        add_child_back(node, create_parse_tree_node(TermComma, peek_current_token()));
         peek_next_token();
-
-        add_child(assigns_node, handle_reassign_expr());
-
-        handle_assign_expr_tail(assigns_node);
+        add_child_back(node, handle_reassign_expr());
+        add_child_back(node, handle_assign_expr_tail());
     }
 
-    return assigns_node;
+    return node;
 }
 
-ASTNode *handle_identifier()
+ParseTree *handle_identifier()
 {
+
+    ParseTree *node = create_parse_tree_node(NonTermIdentifier, peek_current_token());
+
     if (peek_current_token().subtype == TermIdentifier)
     {
-        ASTNode *root = create_node_current_token();
-
+        add_child_back(node, create_parse_tree_node(TermIdentifier, peek_current_token()));
         peek_next_token();
-
-        add_child(root, handle_identifier_array());
-
-        return root;
+        add_child_back(node, handle_identifier_array());
     }
     else
     {
-        error_handler("Expected: Identifierentifier");
-        return NULL;
+        error_handler((char *)"Expected: id");
     }
+
+    return node;
 }
 
-ASTNode *handle_identifier_array()
+ParseTree *handle_identifier_array()
 {
+
+    ParseTree *node = create_parse_tree_node(NonTermIdentifierArray, peek_current_token());
+
     if (peek_current_token().subtype == TermLbracket)
     {
-        ASTNode *root = create_node_current_token();
-
+        Token open = peek_current_token();
         peek_next_token();
 
-        add_child(root, handle_arith_expr());
+        ParseTree *expr = handle_arith_expr();
+        if (!expr)
+        {
+            error_handler("Expected expression inside []");
+            return node;
+        }
+
+        add_child_back(node, create_parse_tree_node(TermLbracket, open));
+        add_child_back(node, expr);
 
         if (peek_current_token().subtype != TermRbracket)
         {
             error_handler("Expected: ]");
-            return NULL;
+            return node;
         }
-        else
-        {
-            add_child(root, create_node_current_token());
 
-            peek_next_token();
-
-            return root;
-        }
+        add_child_back(node, create_parse_tree_node(TermRbracket, peek_current_token()));
+        peek_next_token();
     }
 
-    return NULL;
+    return node;
 }
 
-
-/*
+/* ######## FOR TESTING PURPOSES ########
  *
- *  Abaixo, o mesmo parser, porem apenas fazendo a checagem de sintaxe, sem gerar ast. 
- * 
-*/
-
-ASTNode* only_syntax_check_handle_program()
+ * Parser without parse tree generation
+ */
+void handle_program_syntax_only()
 {
-    create_node("program", get_undef_token());
 
-    only_syntax_check_handle_statement_list();
-
-    return NULL;
+    handle_statement_list_syntax_only();
 }
 
-void only_syntax_check_handle_statement_list()
+void handle_statement_list_syntax_only()
 {
-    only_syntax_check_handle_statement();
 
-    only_syntax_check_handle_statement_list_tail();
-
-    return;
+    handle_statement_syntax_only();
+    handle_statement_list_tail_syntax_only();
 }
 
-void only_syntax_check_handle_statement()
+void handle_statement_syntax_only()
 {
 
     Token curr_tok = peek_current_token();
     if (curr_tok.subtype == TermIf)
     {
-        return only_syntax_check_handle_if_statement();
+        return handle_if_statement_syntax_only();
     }
     else if (curr_tok.subtype == TermWhile)
     {
-        return only_syntax_check_handle_while_statement();
+        return handle_while_statement_syntax_only();
     }
     else if (curr_tok.subtype == TermFor)
     {
-        return only_syntax_check_handle_for_statement();
+        return handle_for_statement_syntax_only();
     }
     else if (curr_tok.type == TOKEN_AND || curr_tok.type == TOKEN_ASSIGN || curr_tok.type == TOKEN_COMMA || curr_tok.type == TOKEN_DIV || curr_tok.type == TOKEN_EQ || curr_tok.type == TOKEN_GE || curr_tok.type == TOKEN_GT || curr_tok.type == TOKEN_LBRACE || curr_tok.type == TOKEN_LE || curr_tok.type == TOKEN_LSQUARE || curr_tok.type == TOKEN_LT || curr_tok.type == TOKEN_MUL || curr_tok.type == TOKEN_NE || curr_tok.type == TOKEN_NOT || curr_tok.type == TOKEN_OR || curr_tok.type == TOKEN_RSQUARE || curr_tok.type == TOKEN_RPAREN || curr_tok.type == TOKEN_RBRACE || curr_tok.type == TOKEN_POW)
     {
         error_handler("Expected: Expr | If | While | For");
-        return NULL;
+        return;
     }
     else
     {
-        only_syntax_check_handle_expr();
-
-        create_node_current_token();
+        handle_expr_syntax_only();
 
         if (peek_current_token().type == TOKEN_SEMICOLON)
         {
@@ -819,42 +939,39 @@ void only_syntax_check_handle_statement()
         else
         {
             error_handler("Expected: ;");
-            return NULL;
+            return;
         }
     }
 }
 
-void only_syntax_check_handle_statement_list_tail()
+void handle_statement_list_tail_syntax_only()
 {
+
     if (peek_current_token().subtype == TermDefVar || peek_current_token().subtype == TermIdentifier || peek_current_token().subtype == TermWhile || peek_current_token().subtype == TermFor || peek_current_token().subtype == TermIf || peek_current_token().subtype == TermDefVar)
     {
-        only_syntax_check_handle_statement();
-        only_syntax_check_handle_statement_list_tail();
+        handle_statement_syntax_only();
+        handle_statement_list_tail_syntax_only();
 
         return;
     }
-
-    return;
 }
 
-void only_syntax_check_handle_compound_statement()
+void handle_compound_statement_syntax_only()
 {
+
     if (peek_current_token().subtype == TermLbrace)
     {
-        create_node_current_token();
-
         peek_next_token();
 
-        only_syntax_check_handle_statement_list();
+        handle_statement_list_syntax_only();
 
         if (peek_current_token().subtype != TermRbrace)
         {
             error_handler("Expected: }");
-            return NULL;
+            return;
         }
         else
         {
-            create_node_current_token();
             peek_next_token();
 
             return;
@@ -863,741 +980,541 @@ void only_syntax_check_handle_compound_statement()
     else
     {
         error_handler("Expected: {");
-        return NULL;
     }
 }
 
-void only_syntax_check_handle_expr()
+void handle_expr_syntax_only()
 {
+
     if (peek_current_token().subtype == TermIdentifier)
     {
-        only_syntax_check_handle_identifier();
+        handle_identifier_syntax_only();
 
-        only_syntax_check_handle_reassign_expr_tail();
-
-        return;
+        handle_reassign_expr_tail_syntax_only();
     }
     else if (peek_current_token().subtype == TermDefVar)
     {
-        return only_syntax_check_handle_decl_expr();
+        return handle_decl_expr_syntax_only();
     }
     else
     {
-        error_handler("expected: let | id");
-        return NULL;
+        error_handler((char *)"Expected: let | id");
     }
 }
 
-void only_syntax_check_handle_reassign_expr()
+void handle_reassign_expr_syntax_only()
 {
+
     if (peek_current_token().subtype == TermIdentifier)
     {
-        only_syntax_check_handle_identifier();
-
+        handle_identifier_syntax_only();
         if (peek_current_token().subtype != TermAssign)
         {
-            error_handler("expected: = assign");
-            return NULL;
+            error_handler((char *)"Expected: =");
         }
         else
         {
-            create_node_current_token();
             peek_next_token();
-
-            only_syntax_check_handle_arith_expr();
-
-            return;
+            handle_arith_expr_syntax_only();
         }
     }
     else
     {
-        error_handler("Expected: Identifier");
-        return NULL;
+        error_handler((char *)"Expected: Identifier");
     }
 }
 
-void only_syntax_check_handle_decl_expr()
+void handle_decl_expr_syntax_only()
 {
+
     if (peek_current_token().subtype == TermDefVar)
     {
-        create_node_current_token();
         peek_next_token();
-
         if (peek_current_token().subtype != TermIdentifier)
         {
-            error_handler("Expected: Identifier");
-            return NULL;
+            error_handler((char *)"Expected: Identifier");
         }
         else
         {
-            only_syntax_check_handle_identifier();
-            only_syntax_check_handle_decl_expr_assign();
-
-            return;
+            handle_identifier_syntax_only();
+            handle_decl_expr_assign_syntax_only();
         }
     }
     else
     {
-        error_handler("expected let");
-        return NULL;
+        error_handler((char *)"Expected: let");
     }
 }
 
-void only_syntax_check_handle_decl_expr_assign()
+void handle_decl_expr_assign_syntax_only()
 {
+
     if (peek_current_token().subtype == TermAssign)
     {
-        create_node_current_token();
         peek_next_token();
-        only_syntax_check_handle_arith_expr();
-
-        return;
+        handle_arith_expr_syntax_only();
     }
-
-    return;
 }
 
-void only_syntax_check_handle_reassign_expr_tail()
+void handle_reassign_expr_tail_syntax_only()
 {
+
     if (peek_current_token().subtype == TermAssign)
     {
-        create_node_current_token();
         peek_next_token();
-
-        only_syntax_check_handle_arith_expr();
-
-        return;
+        handle_arith_expr_syntax_only();
     }
     else
     {
-        return only_syntax_check_handle_arith_expr_tail();
+        return handle_arith_expr_tail_syntax_only();
     }
 }
 
-void only_syntax_check_handle_arith_expr()
+void handle_arith_expr_syntax_only()
 {
-    only_syntax_check_handle_term();
 
-    only_syntax_check_handle_arith_expr_tail();
-
-    return;
+    handle_term_syntax_only();
+    handle_arith_expr_tail_syntax_only();
 }
 
-void only_syntax_check_handle_arith_expr_tail()
+void handle_arith_expr_tail_syntax_only()
 {
-    return only_syntax_check_handle_arith_expr_tail_rest();
+
+    return handle_arith_expr_tail_rest_syntax_only();
 }
 
-void only_syntax_check_handle_arith_expr_tail_rest()
+void handle_arith_expr_tail_rest_syntax_only()
 {
+
     if (peek_current_token().subtype == TermPlus)
     {
-        create_node_current_token();
         peek_next_token();
-
-        only_syntax_check_handle_term();
-
-        only_syntax_check_handle_arith_expr_tail_rest();
-
-        return;
+        handle_term_syntax_only();
+        handle_arith_expr_tail_rest_syntax_only();
     }
     else if (peek_current_token().subtype == TermMinus)
     {
-        create_node_current_token();
         peek_next_token();
-
-        only_syntax_check_handle_term();
-
-        only_syntax_check_handle_arith_expr_tail_rest();
-
-        return;
+        handle_term_syntax_only();
+        handle_arith_expr_tail_rest_syntax_only();
     }
-
-    return;
 }
 
-void only_syntax_check_handle_term()
+void handle_term_syntax_only()
 {
-    only_syntax_check_handle_factor();
 
-    only_syntax_check_handle_term_list();
-
-    return;
+    handle_factor_syntax_only();
+    handle_term_list_syntax_only();
 }
 
-void only_syntax_check_handle_term_list()
+void handle_term_list_syntax_only()
 {
-    return only_syntax_check_handle_term_list_tail();
+
+    return handle_term_list_tail_syntax_only();
 }
 
-void only_syntax_check_handle_term_list_tail()
+void handle_term_list_tail_syntax_only()
 {
+
     if (peek_current_token().subtype == TermMul)
     {
-        create_node_current_token();
         peek_next_token();
-
-        only_syntax_check_handle_factor();
-
-        only_syntax_check_handle_term_list_tail();
-
-        return;
+        handle_factor_syntax_only();
+        handle_term_list_tail_syntax_only();
     }
     else if (peek_current_token().subtype == TermDiv)
     {
-        create_node_current_token();
         peek_next_token();
-
-        only_syntax_check_handle_factor();
-
-        only_syntax_check_handle_term_list_tail();
-
-        return;
+        handle_factor_syntax_only();
+        handle_term_list_tail_syntax_only();
     }
-
-    return;
 }
 
-void only_syntax_check_handle_factor()
+void handle_factor_syntax_only()
 {
-    return only_syntax_check_handle_factor_rest();
+
+    return handle_factor_rest_syntax_only();
 }
 
-void only_syntax_check_handle_factor_rest()
+void handle_factor_rest_syntax_only()
 {
+
     if (peek_current_token().subtype == TermPlus)
     {
-        create_node_current_token();
-
         peek_next_token();
-
-        only_syntax_check_handle_pow();
-
-        return;
+        handle_pow_syntax_only();
     }
     else if (peek_current_token().subtype == TermMinus)
     {
-        create_node_current_token();
-
         peek_next_token();
-
-        only_syntax_check_handle_pow();
-
-        return;
+        handle_pow_syntax_only();
     }
     else
     {
-        return only_syntax_check_handle_pow();
+        return handle_pow_syntax_only();
     }
 }
 
-void only_syntax_check_handle_pow()
+void handle_pow_syntax_only()
 {
-    only_syntax_check_handle_atom();
-    only_syntax_check_handle_pow_rest();
 
-    return;
+    handle_atom_syntax_only();
+    handle_pow_rest_syntax_only();
 }
 
-void only_syntax_check_handle_pow_rest()
+void handle_pow_rest_syntax_only()
 {
+
     if (peek_current_token().subtype == TermPow)
     {
-        create_node_current_token();
-
         peek_next_token();
-
-        only_syntax_check_handle_pow();
-
-        return;
+        handle_pow_syntax_only();
     }
-
-    return;
 }
 
-void only_syntax_check_handle_atom()
+void handle_atom_syntax_only()
 {
+
     if (peek_current_token().subtype == TermIdentifier)
     {
-        return only_syntax_check_handle_identifier();
+        handle_identifier_syntax_only();
     }
     else if (peek_current_token().subtype == TermInteger || peek_current_token().subtype == TermFloat || peek_current_token().subtype == TermString)
     {
-        create_node_current_token();
-
         peek_next_token();
-
-        return;
     }
     else if (peek_current_token().subtype == TermLparen)
     {
-        create_node_current_token();
-
         peek_next_token();
-
-        only_syntax_check_handle_arith_expr();
+        handle_arith_expr_syntax_only();
 
         if (peek_current_token().subtype != TermRparen)
         {
-            error_handler("expected: )");
-            return NULL;
+            error_handler((char *)"Expected: )");
         }
         else
         {
-            create_node_current_token();
             peek_next_token();
-            return;
         }
     }
     else if (peek_current_token().subtype == TermLbracket)
     {
-        return only_syntax_check_handle_array();
+        handle_array_syntax_only();
     }
     else
     {
-        error_handler("expected Atom");
-        return NULL;
+        error_handler((char *)"Expected: Atom");
     }
 }
 
-void only_syntax_check_handle_array()
+void handle_array_syntax_only()
 {
+
     if (peek_current_token().subtype == TermLbracket)
     {
-        create_node_current_token();
-
         peek_next_token();
-        only_syntax_check_handle_items_array();
-
+        handle_items_array_syntax_only();
         if (peek_current_token().subtype != TermRbracket)
         {
-            error_handler("expected: []");
-            return NULL;
+            error_handler((char *)"Expected: ]");
         }
         else
         {
-            create_node_current_token();
             peek_next_token();
-
-            return;
         }
     }
     else
     {
-        error_handler("expected: ]");
-        return NULL;
+        error_handler((char *)"Expected: [");
     }
 }
 
-void only_syntax_check_handle_items_array()
+void handle_items_array_syntax_only()
 {
+
     if (peek_current_token().subtype == TermLbracket || peek_current_token().subtype == TermLparen || peek_current_token().subtype == TermInteger || peek_current_token().subtype == TermFloat || peek_current_token().subtype == TermString || peek_current_token().subtype == TermIdentifier)
     {
-        only_syntax_check_handle_atom();
-
-        only_syntax_check_handle_items_array_tail();
-
-        return;
+        handle_atom_syntax_only();
+        handle_items_array_tail_syntax_only();
     }
-
-    return;
 }
 
-void only_syntax_check_handle_items_array_tail()
+void handle_items_array_tail_syntax_only()
 {
+
     if (peek_current_token().subtype == TermComma)
     {
-        create_node_current_token();
-
         peek_next_token();
-
-        only_syntax_check_handle_atom();
-
-        only_syntax_check_handle_items_array_tail();
-
-        return;
+        handle_atom_syntax_only();
+        handle_items_array_tail_syntax_only();
     }
-
-    return;
 }
 
-void only_syntax_check_handle_expr_bool()
+void handle_expr_bool_syntax_only()
 {
-    return only_syntax_check_handle_expr_bool_or();
+
+    return handle_expr_bool_or_syntax_only();
 }
 
-void only_syntax_check_handle_expr_bool_or()
+void handle_expr_bool_or_syntax_only()
 {
-    only_syntax_check_handle_expr_bool_and();
 
-    only_syntax_check_handle_expr_bool_or_rest();
-
-    return;
+    handle_expr_bool_and_syntax_only();
+    handle_expr_bool_or_rest_syntax_only();
 }
 
-void only_syntax_check_handle_expr_bool_or_rest()
+void handle_expr_bool_or_rest_syntax_only()
 {
+
     if (peek_current_token().subtype == TermOr)
     {
-        create_node_current_token();
-
         peek_next_token();
-
-        only_syntax_check_handle_expr_bool_and();
-
-        only_syntax_check_handle_expr_bool_and_tail();
-
-        return;
+        handle_expr_bool_and_syntax_only();
+        handle_expr_bool_or_rest_syntax_only();
     }
-
-    return;
 }
 
-void only_syntax_check_handle_expr_bool_and()
+void handle_expr_bool_and_syntax_only()
 {
-    only_syntax_check_handle_expr_bool_not();
 
-    only_syntax_check_handle_expr_bool_and_tail();
-
-    return;
+    handle_expr_bool_not_syntax_only();
+    handle_expr_bool_and_tail_syntax_only();
 }
 
-void only_syntax_check_handle_expr_bool_and_tail()
+void handle_expr_bool_and_tail_syntax_only()
 {
+
     if (peek_current_token().subtype == TermAnd)
     {
-        create_node_current_token();
-
         peek_next_token();
-
-        only_syntax_check_handle_expr_bool_not();
-
-        only_syntax_check_handle_expr_bool_and_tail();
-
-        return;
+        handle_expr_bool_not_syntax_only();
+        handle_expr_bool_and_tail_syntax_only();
     }
-
-    return;
 }
 
-void only_syntax_check_handle_expr_bool_not()
+void handle_expr_bool_not_syntax_only()
 {
+
     if (peek_current_token().subtype == TermNot)
     {
-        create_node_current_token();
-
         peek_next_token();
-
-        only_syntax_check_handle_expr_bool_not();
-        return;
+        handle_expr_bool_not_syntax_only();
     }
     else
     {
-        return only_syntax_check_handle_expr_bool_rel();
+        handle_expr_bool_rel_syntax_only();
     }
 }
 
-void only_syntax_check_handle_expr_bool_rel()
+void handle_expr_bool_rel_syntax_only()
 {
-    only_syntax_check_handle_arith_expr();
 
-    only_syntax_check_handle_expr_bool_rel_tail();
-
-    return;
+    handle_arith_expr_syntax_only();
+    handle_expr_bool_rel_tail_syntax_only();
 }
 
-void only_syntax_check_handle_expr_bool_rel_tail()
+void handle_expr_bool_rel_tail_syntax_only()
 {
+
     if (peek_current_token().subtype == TermLe || peek_current_token().subtype == TermGe || peek_current_token().subtype == TermGt || peek_current_token().subtype == TermLt || peek_current_token().subtype == TermNe || peek_current_token().subtype == TermEq)
     {
-        create_node_current_token();
-
         peek_next_token();
-
-        only_syntax_check_handle_arith_expr();
-
-        return;
+        handle_arith_expr_syntax_only();
     }
-
-    return;
 }
 
-void only_syntax_check_handle_expr_bool_rel_factor()
+void handle_expr_bool_rel_factor_syntax_only()
 {
-    return only_syntax_check_handle_arith_expr();
+
+    handle_arith_expr_syntax_only();
 }
 
-void only_syntax_check_handle_while_statement()
+void handle_while_statement_syntax_only()
 {
+
     if (peek_current_token().subtype == TermWhile)
     {
-        create_node_current_token();
-
         peek_next_token();
-
-        only_syntax_check_handle_statement_structure();
-
-        return;
+        handle_statement_structure_syntax_only();
     }
-
-    return;
 }
 
-void only_syntax_check_handle_if_statement()
+void handle_if_statement_syntax_only()
 {
+
     if (peek_current_token().subtype == TermIf)
     {
-        create_node_current_token();
-
         peek_next_token();
-
-        only_syntax_check_handle_statement_structure();
-        only_syntax_check_handle_else_if_statement_list();
-
-        only_syntax_check_handle_else_statement();
-
-        return;
+        handle_statement_structure_syntax_only();
+        handle_else_if_statement_list_syntax_only();
+        handle_else_statement_syntax_only();
     }
-
-    return;
 }
 
-void only_syntax_check_handle_else_if_statement_list()
+void handle_else_if_statement_list_syntax_only()
 {
-    return only_syntax_check_handle_elseif_statement_tail();
+
+    return handle_elseif_statement_tail_syntax_only();
 }
 
-void only_syntax_check_handle_else_if_statement()
+void handle_else_if_statement_syntax_only()
 {
+
     if (peek_current_token().subtype == TermElseIf)
     {
-        create_node_current_token();
-
         peek_next_token();
-
-        only_syntax_check_handle_statement_structure();
-
-        return;
+        handle_statement_structure_syntax_only();
     }
-
-    return;
 }
 
-void only_syntax_check_handle_elseif_statement_tail()
+void handle_elseif_statement_tail_syntax_only()
 {
+
     if (peek_current_token().subtype == TermElseIf)
     {
-        only_syntax_check_handle_else_if_statement();
-
-        only_syntax_check_handle_elseif_statement_tail();
-
-        return;
+        handle_else_if_statement_syntax_only();
+        handle_elseif_statement_tail_syntax_only();
     }
-
-    return;
 }
 
-void only_syntax_check_handle_else_statement()
+void handle_else_statement_syntax_only()
 {
+
     if (peek_current_token().subtype == TermElse)
     {
-        create_node_current_token();
-
         peek_next_token();
-
-        only_syntax_check_handle_compound_statement();
-
-        return;
+        handle_compound_statement_syntax_only();
     }
-
-    return;
 }
 
-void only_syntax_check_handle_statement_structure()
+void handle_statement_structure_syntax_only()
 {
+
     if (peek_current_token().subtype == TermLparen)
     {
-        create_node_current_token();
-
         peek_next_token();
-
-        only_syntax_check_handle_expr_bool();
+        handle_expr_bool_syntax_only();
 
         if (peek_current_token().subtype != TermRparen)
         {
-            error_handler("expected:)");
-            return NULL;
+            error_handler((char *)"Expected: )");
         }
         else
         {
-            create_node_current_token();
-
             peek_next_token();
-
-            only_syntax_check_handle_compound_statement();
-
-            return;
+            handle_compound_statement_syntax_only();
         }
     }
     else
     {
-        error_handler("expected :(");
-        return NULL;
+        error_handler((char *)"Expected: (");
     }
 }
 
-void only_syntax_check_handle_for_statement()
+void handle_for_statement_syntax_only()
 {
+
     if (peek_current_token().subtype == TermFor)
     {
-        create_node_current_token();
-
         peek_next_token();
-
         if (peek_current_token().subtype != TermLparen)
         {
-            error_handler("expected: ()");
-            return NULL;
+            error_handler((char *)"Expected: (");
         }
         else
         {
-            create_node_current_token();
-
             peek_next_token();
-
-            only_syntax_check_handle_assign_expr_list();
-
+            handle_assign_expr_list_syntax_only();
             if (peek_current_token().subtype != TermSemi)
             {
-                error_handler("expected: ; 2");
-                return NULL;
+                error_handler((char *)"Expected: ;");
             }
             else
             {
-                create_node_current_token();
-
                 peek_next_token();
-                only_syntax_check_handle_for_expr_bool();
+                handle_for_expr_bool_syntax_only();
                 if (peek_current_token().subtype != TermSemi)
                 {
-                    error_handler("expected: ; 3");
-                    return NULL;
+                    error_handler((char *)"Expected: ;");
                 }
                 else
                 {
-                    create_node_current_token();
-
                     peek_next_token();
-
-                    only_syntax_check_handle_assign_expr_list();
+                    handle_assign_expr_list_syntax_only();
 
                     if (peek_current_token().subtype != TermRparen)
                     {
-                        error_handler("expected: )");
-                        return NULL;
+                        error_handler((char *)"Expected: )");
                     }
                     else
                     {
-                        create_node_current_token();
-
                         peek_next_token();
-                        only_syntax_check_handle_compound_statement();
-
-                        return;
+                        handle_compound_statement_syntax_only();
                     }
                 }
             }
         }
     }
-
-    return;
 }
 
-void only_syntax_check_handle_for_expr_bool()
+void handle_for_expr_bool_syntax_only()
 {
+
     if (peek_current_token().subtype == TermNot || peek_current_token().subtype == TermLbracket || peek_current_token().subtype == TermLparen || peek_current_token().subtype == TermInteger || peek_current_token().subtype == TermFloat || peek_current_token().subtype == TermString || peek_current_token().subtype == TermIdentifier)
     {
-        return only_syntax_check_handle_expr_bool();
+        handle_expr_bool_syntax_only();
     }
-
-    return;
 }
 
-void only_syntax_check_handle_assign_expr_list()
+void handle_assign_expr_list_syntax_only()
 {
+
     if (peek_current_token().subtype == TermIdentifier)
     {
-        only_syntax_check_handle_reassign_expr();
-
-        only_syntax_check_handle_assign_expr_tail();
-
-        return;
+        handle_reassign_expr_syntax_only();
+        handle_assign_expr_tail_syntax_only();
     }
-
-    return;
 }
 
-void only_syntax_check_handle_assign_expr_tail()
+void handle_assign_expr_tail_syntax_only()
 {
+
     if (peek_current_token().subtype == TermComma)
     {
-        create_node_current_token();
-
         peek_next_token();
-
-        only_syntax_check_handle_reassign_expr();
-
-        only_syntax_check_handle_assign_expr_tail();
-
-        return;
+        handle_reassign_expr_syntax_only();
+        handle_assign_expr_tail_syntax_only();
     }
-
-    return;
 }
 
-void only_syntax_check_handle_identifier()
+void handle_identifier_syntax_only()
 {
+
     if (peek_current_token().subtype == TermIdentifier)
     {
-        create_node_current_token();
-
         peek_next_token();
-
-        only_syntax_check_handle_identifier_array();
-
-        return;
+        handle_identifier_array_syntax_only();
     }
     else
     {
-        error_handler("expected id");
-        return NULL;
+        error_handler((char *)"Expected: id");
     }
 }
 
-void only_syntax_check_handle_identifier_array()
+void handle_identifier_array_syntax_only()
 {
+
     if (peek_current_token().subtype == TermLbracket)
     {
-        create_node_current_token();
-
         peek_next_token();
-
-        only_syntax_check_handle_arith_expr();
-
+        handle_arith_expr_syntax_only();
         if (peek_current_token().subtype != TermRbracket)
         {
-            error_handler("expected arrauyyp");
-            return NULL;
+            error_handler((char *)"Expected: ]");
         }
         else
         {
-            create_node_current_token();
-
             peek_next_token();
-
-            return;
         }
     }
-
-    return;
 }

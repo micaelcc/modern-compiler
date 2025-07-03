@@ -1,98 +1,104 @@
 #include "parser.h"
-extern int success;
-extern size_t current_token_index;
-double last_time_td = 0;
 
-ASTNode *execute_recursive_descendent()
+long double getMemoryConsumption()
 {
-    clock_t start, end;
-    double execution_time;
+    char buffer[1024] = "";
 
-    struct rusage usage_before, usage_after;
-
-    start = clock();
-    printf("\n\033\t\t[0;34mExecuting Recursive Descentent...\033[0m\n");
-    getrusage(RUSAGE_SELF, &usage_before);
-
-    ASTNode *ast_node = NULL;
-
-    if(ONLY_SYNTAX_CHECK) {
-        only_syntax_check_handle_program();
-    } else {
-        ast_node = handle_program();
-    }
-
-    getrusage(RUSAGE_SELF, &usage_after);
-
-    end = clock();
-
-    execution_time = ((double)(end - start)) / CLOCKS_PER_SEC * 1000;
-
-    if (ast_node != NULL)
-        printf("\033[0;32m\t\tSuccess!\033[0m\n");
-
-    printf("\t\tExecution Time (ASDRP): %f milliseconds\n", execution_time);
-    long memory_used2 = usage_after.ru_maxrss - usage_before.ru_maxrss;
-    last_time_td = execution_time;
-    printf("\t\tMemory consumption (ASDRP): %ld KB\n", memory_used2);
-    
-
-    if (PRINT_AST)
+    FILE *file = fopen("/proc/self/status", "r");
+    if (!file)
     {
-        printf("\t\tAbstract Syntax Tree (AST): \n");
-        print_ast(ast_node);
+        printf("Call to getMemory FAILED; linux file proc/self/status not found!\n");
+        return 1;
     }
 
-    current_token_index = 0;
+    unsigned long currRealMemKB = 0;
 
-    return ast_node;
+    while (fscanf(file, " %1023s", buffer) == 1)
+    {
+        if (strcmp(buffer, "VmRSS:") == 0)
+        {
+            fscanf(file, " %lu", &currRealMemKB);
+            break;
+        }
+    }
+
+    fclose(file);
+
+    return (long double)currRealMemKB;
 }
 
-ASTNode *execute_non_recursive()
+ParserBMark execute_parser_bmark(CompilerOptions opt)
 {
-    load_file();
-    set_table();
+    struct timespec start, end;
+    struct mallinfo2 start_heap, end_heap;
+    long double memory_consumption = 0, memory_heap_consumption = 0;
+    long double start_memory, end_memory;
+    long double execution_time = 0;
+    size_t i;
+    ParseTree *parse_tree_node = NULL;
 
-    clock_t start, end;
-    double execution_time;
-
-    struct rusage usage_before, usage_after;
-
-    printf("\033\n\n\t\t[0;34mExecuting Table-Driven Parser...\033[0m\n");
-    getrusage(RUSAGE_SELF, &usage_before);
-    start = clock();
-
-    ASTNode *ast_node = NULL;
-
-    if (ONLY_SYNTAX_CHECK) {
-        parser_non_recurs_only_syntax_check();
-    } else {
-        ast_node = parser_non_recurs();
-    }
-    getrusage(RUSAGE_SELF, &usage_after);
-
-    end = clock();
-    execution_time = ((double)(end - start)) / CLOCKS_PER_SEC * 1000;
-
-    if (ast_node != NULL)
-        printf("\033[0;32m\t\tSuccess!\033[0m\n");
-
-    printf("\t\tExecution Time (ASTP): %f milliseconds\n", execution_time);
-
-    long memory_used = usage_after.ru_maxrss - usage_before.ru_maxrss;
-    printf("\t\tMemory consumption (ASTP): %ld KB\n", memory_used);
-    if (PRINT_AST)
+    for (i = 0; i < BMARK_REPS; i++)
     {
-        printf("\t\tAbstract Syntax Tree (AST): \n");
-        print_ast(ast_node);
-    }
-    current_token_index = 0;
+        start_heap = mallinfo2();
+        start_memory = getMemoryConsumption();
+        clock_gettime(CLOCK_MONOTONIC, &start);
+        parse_tree_node = parse(opt);
+        clock_gettime(CLOCK_MONOTONIC, &end);
+        end_memory = getMemoryConsumption();
+        end_heap = mallinfo2();
 
-    if (last_time_td > execution_time) {
-        printf("\n\n\t\tASTP executed %lf%% faster than ASDRP.\n", ((last_time_td - execution_time) / last_time_td) * 100);
-    } else {
-        printf("\n\n\t\tASDRP executed %lf%% faster than ASTP.\n", ((execution_time - last_time_td) / execution_time) * 100);
+        execution_time += (long double)(end.tv_sec - start.tv_sec) * 1000.0 +
+                          (end.tv_nsec - start.tv_nsec) / 1e6;
+
+        memory_consumption += (long double)end_memory - start_memory;
+        memory_heap_consumption += (end_heap.uordblks - start_heap.uordblks) / 1024.0; //
+
+        if (i < BMARK_REPS - 1)
+        {
+            free_parse_tree(parse_tree_node);
+        }
+
+        sleep(0.5);
     }
 
-    return ast_node;
+    ParserBMark result = {
+        .parser = (char *)(opt.EXECUTE_RECURSIVE_DESCENT ? "Recursive Descent" : "Table Driven"),
+        .time_in_ms = execution_time / BMARK_REPS,
+        .memory_consumption_in_KB = memory_consumption / BMARK_REPS,
+        .memory_heap_consumption_in_KB = memory_heap_consumption / BMARK_REPS,
+        .tokens_analyzed = get_current_token_index(),
+        .tree = parse_tree_node};
+
+    return result;
+}
+
+ParseTree *parse(CompilerOptions options)
+{
+    ParseTree *tree = NULL;
+    set_current_token_index(0);
+
+    if (options.EXECUTE_TABLE_DRIVEN)
+    {
+        if (options.ONLY_SYNTAX_CHECK)
+        {
+            table_driven_parser_only_syntax_check();
+        }
+        else
+        {
+            return table_driven_parser();
+        }
+    }
+    else
+    {
+        if (options.ONLY_SYNTAX_CHECK)
+        {
+            handle_program_syntax_only();
+        }
+        else
+        {
+            return handle_program();
+        }
+    }
+
+    return tree;
 }

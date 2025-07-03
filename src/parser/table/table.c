@@ -1,10 +1,29 @@
 #include "table.h"
 
-cJSON *table_json;
+cJSON *table_json = NULL;
 const int rowsSize = NonTermIdentifierArray + 1;
 const int columnsSize = TermElse + 1;
 const int columnsFirst = 1000;
 ParseTable table;
+
+void free_table()
+{
+    cJSON_Delete(table_json);
+
+    for (int i = 0; i < rowsSize; i++) {
+        if (!table[i]) continue;
+        for (int j = columnsFirst; j < columnsSize; j++) {
+            if (table[i][j]) {
+                free(table[i][j]);
+                table[i][j] = NULL;
+            }
+        }
+        free(table[i]);
+        table[i] = NULL;
+    }
+    free(table);
+    table = NULL;
+}
 
 void *load_file()
 {
@@ -33,9 +52,11 @@ void *load_file()
     fclose(file);
 
     table_json = cJSON_Parse(str);
+
+    free(str);
 }
 
-int *search_table_json(enum NonTerminals non_terminal, int terminal)
+int *search_table_json(NonTerminals non_terminal, int terminal)
 {
     int num_prods, i;
 
@@ -62,7 +83,7 @@ int *search_table_json(enum NonTerminals non_terminal, int terminal)
     replace_char(array_prods, ',', ':');
     split_string(array_prods, ":", str_prods, &num_prods);
 
-    int *prods = malloc(sizeof(int) * num_prods);
+    int *prods = (int*)malloc(sizeof(int) * num_prods);
 
     for (i = 0; i < num_prods; i++)
     {
@@ -77,6 +98,9 @@ int *search_table_json(enum NonTerminals non_terminal, int terminal)
     }
 
     prods[num_prods] = -1;
+
+    free(array_prods);
+
     return prods;
 }
 
@@ -92,9 +116,9 @@ void set_table()
     for (i = 0; i < rowsSize; i++)
     {
         table[i] = (int **)malloc(columnsSize * sizeof(int *));
-        for (int j = columnsFirst; j < columnsSize; j++)
+        for (j = columnsFirst; j < columnsSize; j++)
         {
-            table[i][j] = search_table_json(i, j);
+            table[i][j] = search_table_json((NonTerminals)i, j);
         }
     }
 }
@@ -549,11 +573,4 @@ int non_terminal_str_to_enum(const char *str)
         return NonTermIdentifierArray;
 
     return -1;
-}
-
-void error_expected_non_term(int in)
-{
-    printf("Expected: ");
-
-    printf("\n\n");
 }

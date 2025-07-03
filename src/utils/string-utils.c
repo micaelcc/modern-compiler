@@ -1,5 +1,48 @@
 #include "string-utils.h"
 
+char* read_file_to_string(const char *file_path) {
+    FILE *file = fopen(file_path, "rb");
+    if (!file) {
+        perror("Failed to open file");
+        return NULL;
+    }
+
+    if (fseek(file, 0, SEEK_END) != 0) {
+        perror("fseek failed");
+        fclose(file);
+        return NULL;
+    }
+
+    long filesize = ftell(file);
+    if (filesize < 0) {
+        perror("ftell failed");
+        fclose(file);
+        return NULL;
+    }
+
+    rewind(file);
+
+    char *buffer = (char*)malloc(filesize + 1);
+    if (!buffer) {
+        perror("malloc failed");
+        fclose(file);
+        return NULL;
+    }
+
+    size_t read_size = fread(buffer, 1, filesize, file);
+    if (read_size != (size_t)filesize) {
+        perror("fread failed");
+        free(buffer);
+        fclose(file);
+        return NULL;
+    }
+
+    buffer[filesize] = '\0';
+
+    fclose(file);
+    return buffer;
+}
+
 void replace_char(char *s, char find, char replace)
 {
     int i = 0;
@@ -95,7 +138,7 @@ char *substring(const char *s, int start, int end)
     char *value;
 
     SIZE = end - start + 1;
-    value = (char *)malloc(SIZE * sizeof(char));
+    value = (char *)malloc(SIZE+1 * sizeof(char));
 
     strncpy(value, s + start, SIZE);
     value[SIZE] = '\0';

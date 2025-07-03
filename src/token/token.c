@@ -18,7 +18,7 @@ Token create_token(TokenType t, const char *value)
 
 Token *push_token(Token t, Token *l, int *size)
 {
-    Token *new_tokens = realloc(l, (*size + 1) * sizeof(Token));
+    Token *new_tokens = (Token*)realloc(l, (*size + 1) * sizeof(Token));
 
     if (new_tokens == NULL)
     {

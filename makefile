@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -Wall -Wextra -I. $(shell pkg-config --cflags glib-2.0) 
+CFLAGS = -Wall -Wextra -D_POSIX_C_SOURCE=200809L -I. $(shell pkg-config --cflags glib-2.0) 
 
 SRC_DIR = src
 BIN_DIR = bin
@@ -13,7 +13,7 @@ LIBS = $(shell pkg-config --libs glib-2.0) -lm -lcjson
 all: $(BIN_DIR)/$(TARGET)
 
 $(BIN_DIR)/$(TARGET): $(OBJS)
-	$(CC) -o $@ $^ $(LIBS)
+	$(CC)  -o $@ $^ $(LIBS)
 
 $(BIN_DIR)/%.o: $(SRC_DIR)/%.c
 	@mkdir -p $(dir $@)

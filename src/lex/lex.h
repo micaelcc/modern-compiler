@@ -17,6 +17,7 @@ Token peek_current_token();
 Token peek_next_token();
 Token peek_next_token_no_advance();
 size_t get_current_token_index();
+void set_current_token_index(int);
 void make_tokens(const char[]);
 void advance_next_char(const char *, size_t *, size_t *, size_t *);
 char *make_bool_operator(const char[], size_t *);
@@ -30,5 +31,5 @@ bool is_arith_operator(char);
 bool is_bool_operator(char, char);
 bool is_symbol(char);
 size_t get_number_of_tokens();
-
+void free_tokens();
 #endif /* __LEX_H__ */

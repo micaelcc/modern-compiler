@@ -1,10 +1,14 @@
-#ifndef CONFIG_H
-#define CONFIG_H
+#ifndef __CONFIG_H__
+#define __CONFIG_H__
+#include <stdbool.h>
 
-#define ONLY_SYNTAX_CHECK 0
-#define PRINT_TOKENS 0
-#define PRINT_AST 0
-#define EXECUTE_RECURSIVE_DESCENT 1
-#define EXECUTE_TABLE_DRIVEN 1
+typedef struct {
+    bool ONLY_SYNTAX_CHECK;
+    bool PRINT_TOKENS;
+    bool PRINT_PARSE_TREE;
+    bool EXECUTE_RECURSIVE_DESCENT;
+    bool EXECUTE_TABLE_DRIVEN;
+    bool PRINT_PARSER_RESULT;
+} CompilerOptions;
 
-#endif
+#endif // __CONFIG_H__

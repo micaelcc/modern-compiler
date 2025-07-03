@@ -1,5 +1,18 @@
 # modern-compiler
 Modern Compiler Implementation in C
+Project dedicated to testing two parsing methodologies for LL(1) grammars, as part of my Computer Science undergraduate thesis (Final Year Project).
+
+#### Execute tests (Recursive Descent / Table-Driven -with and without Parse Tree)
+Note: When running tests for the table-driven (non-recursive) parser, make sure the st_free calls in both stack and parse_tree_stack are commented out.
+This is intentional — memory usage will be measured during benchmarking, and automatic deallocation would invalidate the results.
+```bash
+bash run_tests.sh
+```
+
+#### Generate random code
+```bash
+bash generate_code.sh --max-tokens 10000
+```
 
 #### Run 
 
@@ -16,73 +29,111 @@ make && make test
 ## Grammar
 
 ```md
-# Syntactic LL(1) Grammar
+(* Syntactic Grammar for EASYC *)
 
-<program>              ::= <statement>*
-<statement>            ::= <expr> ";"
-                         | <if_statement>
-                         | <while_statement>
-                         | <for_statement>
-<compound_statement>   ::= "{" <statement>* "}"
+Program             ::= StatementList
+CompoundStatement   ::= '{' StatementList '}'
+StatementList       ::= Statement StatementListTail
+StatementListTail   ::= Statement StatementListTail
+                      | ε
 
-<expr>                 ::= <decl_expr>
-                         | <identifier> <reassign_expr_tail>
+Statement           ::= Expr ';'
+                      | IfStatement
+                      | WhileStatement
+                      | ForStatement
 
-<arith_expr>           ::= <term> <arith_expr_tail>?
-<arith_expr_tail>      ::= ("+" | "-") <term> <arith_expr_tail>?
-<decl_expr>            ::= "let" <space> <identifier> ("=" <arith_expr>)?
-<reassign_expr>        ::= <identifier> "=" <arith_expr>
-<reassign_expr_tail>   ::= "=" <arith_expr> | <arith_expr_tail>
+Expr                ::= DeclExpr
+                      | Identifier ReassignExprTail
 
-<array>		   		   ::= "[" <items_array>? "]"
-<items_array>          ::= <atom> <items_array_tail>?
-<items_array_tail>	   ::= "," <atom> <items_array_tail>?
-<term>                 ::= <factor> (("*" | "/") <factor>)*
-<factor>               ::= ("+" | "-")* (<pow> | <atom>)
-<pow>                  ::= <atom> "^" <atom>              
-<atom>                 ::= <digit>+
-                         | <identifier>
-                         | <string>
-                         | "(" <expr> ")"
-                         | <array>
+ReassignExpr        ::= Identifier '=' ArithExpr
+DeclExpr            ::= 'let' Identifier DeclExprAssign
+DeclExprAssign      ::= '=' ArithExpr
+                      | ε
 
+ReassignExprTail    ::= '=' ArithExpr
+                      | ArithExprTail
 
-<expr_bool>            ::= <expr_bool_or>
-<expr_bool_or>         ::= <expr_bool_and> (<space> "||" <space> <expr_bool_and>)*
-<expr_bool_and>        ::= <expr_bool_not> (<space> "&&" <space> <expr_bool_not>)*
-<expr_bool_not>        ::= "!" <expr_bool_not>
-                         | <expr_bool_rel>
-                         | "(" <expr_bool> ")"                            
-<expr_bool_rel>        ::= <arith_expr> <expr_bool_rel_tail>?
-<expr_bool_rel_tail>   ::= <op_bool> <arith_expr>
-                         
-<op_bool>              ::= "<"
-                         | ">"
-                         | "<="
-                         | ">="
-                         | "!="
-                         | "=="
+ArithExpr           ::= Term ArithExprTail
+ArithExprTail       ::= ArithExprTailRest
+ArithExprTailRest   ::= '+' Term ArithExprTailRest
+                      | '-' Term ArithExprTailRest
+                      | ε
 
-<while_statement>      ::= "while" <statement_structure>
-<if_statement>         ::= "if" <statement_structure> <elseif_statement>* <else_statement>?
-<elseif_statement>     ::= "elseif" <statement_structure>
-<else_statement>       ::= "else" <space> (<expr> ";" | <compound_statement>)
-<statement_structure>  ::= "(" <expr_bool> ")" (<expr> ";" | <compound_statement>)
-<for_statement>        ::= "for" "(" <assign_expr_list>? ";" <expr_bool>? ";" <assign_expr_list>? ")"
-                           <compound_statement>
-<assign_expr_list>     ::= <reassign_expr> <assign_expr_tail>?
-<assign_expr_tail>     ::= "," <reassign_expr> <assign_expr_tail>?
+Term                ::= Factor TermList
+TermList            ::= TermListTail
+TermListTail        ::= '*' Factor TermListTail
+                      | '/' Factor TermListTail
+                      | ε
 
-<identifier>           ::= <array_item> | <letter> <letter_or_digit>*
-<string>               ::= <quote> (<letter_or_digit> | "_" | " ")+ <quote>
-<array_item>	       ::= <identifier> "[" <arith_expr> "]"
-<letter>               ::= [a-z]
-                         | [A-Z]
-                         | "_"
-<letter_or_digit>      ::= <letter>
-                         | <digit>
-<digit>                ::= [0-9]
-<space>                ::= " "
-<new_line>             ::= "\n"
-<quote>                ::= "\""
+Factor              ::= FactorRest
+FactorRest          ::= '+' Pow
+                      | '-' Pow
+                      | Pow
+
+Pow                 ::= Atom PowRest
+PowRest             ::= '^' Pow
+                      | ε
+
+Atom                ::= 'INTEGER'
+                      | 'FLOAT'
+                      | Identifier
+                      | 'STRING'
+                      | '(' ArithExpr ')'
+                      | Array
+
+Array               ::= '[' ItemsArray ']'
+ItemsArray          ::= Atom ItemsArrayTail
+                      | ε
+
+ItemsArrayTail      ::= ',' Atom ItemsArrayTail
+                      | ε
+
+ExprBool            ::= ExprBoolOr
+ExprBoolOr          ::= ExprBoolAnd ExprBoolOrRest
+ExprBoolOrRest      ::= '||' ExprBoolAnd ExprBoolOrRest
+                      | ε
+
+ExprBoolAnd         ::= ExprBoolNot ExprBoolAndTail
+ExprBoolAndTail     ::= '&&' ExprBoolNot ExprBoolAndTail
+                      |  ε
+
+ExprBoolNot         ::= '!' ExprBoolNot 
+                      | ExprBoolRel 
+
+ExprBoolRel         ::= ArithExpr ExprBoolRelTail
+ExprBoolRelTail     ::= OpBool ArithExpr 
+                      | ε
+
+ExprBoolRelFactor   ::= ArithExpr
+OpBool              ::= '<'
+                      | '>'
+                      | '<='
+                      | '>='
+                      | '!='
+                      | '=='
+
+WhileStatement      ::= 'while' StatementStructure
+IfStatement         ::= 'if' StatementStructure ElseifStatementList ElseStatement
+ElseifStatementList ::= ElseifStatementTail
+ElseifStatement     ::= 'elseif' StatementStructure
+ElseifStatementTail ::= ElseifStatement ElseifStatementTail
+                      | ε
+
+ElseStatement       ::= 'else' CompoundStatement
+                      | ε
+
+StatementStructure  ::= '(' ExprBool ')' CompoundStatement
+ForStatement        ::= 'for' '(' AssignExprList ';' ForExprBool ';' AssignExprList ')' CompoundStatement
+ForExprBool         ::= ExprBool
+                      | ε
+
+AssignExprList      ::= ReassignExpr AssignExprTail
+                      | ε
+
+AssignExprTail      ::= ',' ReassignExpr AssignExprTail
+                      | ε
+
+Identifier          ::= 'IDENTIFIER' IdentifierArray
+IdentifierArray     ::= '[' ArithExpr ']'
+                      | ε
 ```

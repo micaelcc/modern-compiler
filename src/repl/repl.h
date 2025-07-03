@@ -5,9 +5,9 @@
 #include "../lex/lex.h"
 #include "../token/token.h"
 #include "../parser/parser.h"
-#include "input-generator.h"
 #include "../config.h"
+
 void print_samples();
-void prompt();
+void prompt(CompilerOptions options);
 
 #endif /* __REPL_H__ */

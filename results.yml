@@ -1,0 +1,128 @@
+File: input-0.easyc
+  OnlySyntaxCheck:
+    Table Driven:
+      Tokens: 98454
+      Time: 6.59 ms
+      VmRSS: 56.00 KB
+      HEAP: 125.15 KB
+    Recursive Descent:
+      Tokens: 98454
+      Time: 1.75 ms
+      VmRSS: 0.00 KB
+      HEAP: 0.00 KB
+
+  WithParseTree:
+    Table Driven:
+      Tokens: 98454
+      Time: 22.63 ms
+      VmRSS: 3725.20 KB
+      HEAP: 34178.63 KB
+    Recursive Descent:
+      Tokens: 98454
+      Time: 14.26 ms
+      VmRSS: 3344.00 KB
+      HEAP: 33011.31 KB
+
+
+File: input-1.easyc
+  OnlySyntaxCheck:
+    Table Driven:
+      Tokens: 985901
+      Time: 62.48 ms
+      VmRSS: 0.00 KB
+      HEAP: 125.15 KB
+    Recursive Descent:
+      Tokens: 985901
+      Time: 14.56 ms
+      VmRSS: 50.00 KB
+      HEAP: 0.00 KB
+
+  WithParseTree:
+    Table Driven:
+      Tokens: 985901
+      Time: 226.65 ms
+      VmRSS: 34158.40 KB
+      HEAP: 340232.58 KB
+    Recursive Descent:
+      Tokens: 985901
+      Time: 145.40 ms
+      VmRSS: 33360.80 KB
+      HEAP: 331562.81 KB
+
+
+File: input-2.easyc
+  OnlySyntaxCheck:
+    Table Driven:
+      Tokens: 9844392
+      Time: 628.62 ms
+      VmRSS: 44.00 KB
+      HEAP: 125.15 KB
+    Recursive Descent:
+      Tokens: 9844392
+      Time: 143.96 ms
+      VmRSS: 360.80 KB
+      HEAP: 0.00 KB
+
+  WithParseTree:
+    Table Driven:
+      Tokens: 9844392
+      Time: 2238.62 ms
+      VmRSS: 339574.00 KB
+      HEAP: 3395600.02 KB
+    Recursive Descent:
+      Tokens: 9844392
+      Time: 1466.38 ms
+      VmRSS: 333027.20 KB
+      HEAP: 3312265.56 KB
+
+
+File: input-3.easyc
+  OnlySyntaxCheck:
+    Table Driven:
+      Tokens: 19688682
+      Time: 1238.20 ms
+      VmRSS: 0.00 KB
+      HEAP: 125.15 KB
+    Recursive Descent:
+      Tokens: 19688682
+      Time: 288.27 ms
+      VmRSS: 730.40 KB
+      HEAP: 0.00 KB
+
+  WithParseTree:
+    Table Driven:
+      Tokens: 19688682
+      Time: 4389.94 ms
+      VmRSS: 678852.40 KB
+      HEAP: 6788355.04 KB
+    Recursive Descent:
+      Tokens: 19688682
+      Time: 2916.11 ms
+      VmRSS: 665805.20 KB
+      HEAP: 6622114.91 KB
+
+
+File: input-4.easyc
+  OnlySyntaxCheck:
+    Table Driven:
+      Tokens: 49221756
+      Time: 3119.22 ms
+      VmRSS: 0.00 KB
+      HEAP: 125.15 KB
+    Recursive Descent:
+      Tokens: 49221756
+      Time: 721.55 ms
+      VmRSS: 1786.40 KB
+      HEAP: 0.00 KB
+
+  WithParseTree:
+    Table Driven:
+      Tokens: 49221756
+      Time: 10923.00 ms
+      VmRSS: 1697167.60 KB
+      HEAP: 16971610.64 KB
+    Recursive Descent:
+      Tokens: 49221756
+      Time: 7276.41 ms
+      VmRSS: 1664590.40 KB
+      HEAP: 16556496.43 KB

@@ -6,8 +6,8 @@ size_t current_token_index = 0;
 void make_tokens(const char value[])
 {
     size_t current = 0;
-    size_t column = -1;
-    size_t row = -1;
+    size_t column = 0;
+    size_t row = 0;
 
     char c = value[current];
     int index_tokens = 0;
@@ -24,8 +24,9 @@ void make_tokens(const char value[])
         }
         else if (is_end_of_statement(c))
         {
-            lexema = (char *)malloc(2 * sizeof(char));
-            sprintf(lexema, "%c", c);
+            lexema = (char *)malloc(2);
+            lexema[0] = c;
+            lexema[1] = '\0';
             advance_next_char(value, &row, &column, &current);
         }
         else if (is_number(c))
@@ -45,20 +46,20 @@ void make_tokens(const char value[])
         }
         else if (is_arith_operator(c))
         {
-            lexema = (char *)malloc(2 * sizeof(char));
-            sprintf(lexema, "%c", c);
+            lexema = (char *)malloc(2);
+            lexema[0] = c;
+            lexema[1] = '\0';
             advance_next_char(value, &row, &column, &current);
         }
-        else if (is_bool_operator(c, value[current + 1]))
+        else if (value[current + 1] != '\0' && is_bool_operator(c, value[current + 1]))
         {
             lexema = make_bool_operator(value, &current);
         }
         else if (is_symbol(c))
         {
-            lexema = (char *)malloc(2 * sizeof(char));
-
-            sprintf(lexema, "%c", c);
-
+            lexema = (char *)malloc(2);
+            lexema[0] = c;
+            lexema[1] = '\0';
             advance_next_char(value, &row, &column, &current);
         }
         else
@@ -69,15 +70,14 @@ void make_tokens(const char value[])
         if (lexema)
         {
             Token t = create_token(type, lexema);
-
             tokens = push_token(t, tokens, &index_tokens);
+            free(lexema);
         }
 
         c = value[current];
     }
 
     tokens = push_token(create_token(TOKEN_UNK, E0F), tokens, &index_tokens);
-
     set_tokens(tokens);
 }
 
@@ -230,8 +230,20 @@ size_t get_number_of_tokens()
 {
     size_t size = 0;
 
-    for (; TOKENS[size].value != NULL; size++)
+    for (; TOKENS[size].type != TOKEN_EOF; size++)
         ;
 
-    return size;
+    return size+1;
+}
+
+void free_tokens() {
+    size_t size = get_number_of_tokens();
+    for (size_t i = 0; i < size; i++) {
+        free(TOKENS[i].value);
+    }
+    free(TOKENS);
+}
+
+void set_current_token_index(int index) {
+    current_token_index = index;
 }

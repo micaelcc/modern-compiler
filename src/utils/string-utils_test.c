@@ -32,5 +32,6 @@ int main()
     test_substring();
     test_contains();
 
+    printf("StringUtils tests passed.\n");
     return 0;
 }
