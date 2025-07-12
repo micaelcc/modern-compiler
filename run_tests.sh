@@ -5,7 +5,7 @@ if [ ! -d "./tests" ]; then
     mkdir ./tests
 fi
 
-token_counts=(100000 1000000 10000000 20000000 50000000) # High load testing
+token_counts=(1000 10000 100000 500000 800000 1000000 1000)
 
 declare -a inputs=()
 
@@ -38,6 +38,8 @@ for file in "${inputs[@]}"; do
     ./bin/main --only-syntax-check --execute-table-driven -i "$file"
     echo ""
     ./bin/main --only-syntax-check --execute-recursive-descent -i "$file"
+    echo ""
+    ./bin/main --only-syntax-check --execute-bison -i "$file"
     echo ""
     echo "WithParseTree"
     ./bin/main  --execute-table-driven -i "$file"

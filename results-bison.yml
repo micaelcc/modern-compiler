@@ -1,0 +1,107 @@
+File: input-0.easyc
+  OnlySyntaxCheck:
+    Table Driven:
+      Tokens: 962
+      Time: 0.074 ms
+      VmRSS: 0.00 KB
+      HEAP: 125.15 KB
+    Recursive Descent:
+      Tokens: 962
+      Time: 0.014 ms
+      VmRSS: 0.00 KB
+      HEAP: 0.00 KB
+    Bison LR Parser:
+      Tokens: 962
+      Time: 0.115 ms
+      VmRSS: 0.00 KB
+      HEAP: 7.44 KB
+
+File: input-1.easyc
+  OnlySyntaxCheck:
+    Table Driven:
+      Tokens: 9897
+      Time: 0.640 ms
+      VmRSS: 0.00 KB
+      HEAP: 125.15 KB
+    Recursive Descent:
+      Tokens: 9897
+      Time: 0.144 ms
+      VmRSS: 0.00 KB
+      HEAP: 0.00 KB
+    Bison LR Parser:
+      Tokens: 9897
+      Time: 1.053 ms
+      VmRSS: 0.00 KB
+      HEAP: 67.94 KB
+
+File: input-2.easyc
+  OnlySyntaxCheck:
+    Table Driven:
+      Tokens: 98408
+      Time: 6.185 ms
+      VmRSS: 56.00 KB
+      HEAP: 125.15 KB
+    Recursive Descent:
+      Tokens: 98408
+      Time: 1.811 ms
+      VmRSS: 0.00 KB
+      HEAP: 0.00 KB
+    Bison LR Parser:
+      Tokens: 98408
+      Time: 10.363 ms
+      VmRSS: 1000.00 KB
+      HEAP: 680.27 KB
+
+File: input-3.easyc
+  OnlySyntaxCheck:
+    Table Driven:
+      Tokens: 492393
+      Time: 34.031 ms
+      VmRSS: 0.00 KB
+      HEAP: 125.15 KB
+    Recursive Descent:
+      Tokens: 492393
+      Time: 7.129 ms
+      VmRSS: 0.00 KB
+      HEAP: 0.00 KB
+    Bison LR Parser:
+      Tokens: 492393
+      Time: 51.390 ms
+      VmRSS: 3616.00 KB
+      HEAP: 3391.92 KB
+
+File: input-4.easyc
+  OnlySyntaxCheck:
+    Table Driven:
+      Tokens: 787448
+      Time: 50.479 ms
+      VmRSS: 0.00 KB
+      HEAP: 125.15 KB
+    Recursive Descent:
+      Tokens: 787448
+      Time: 11.506 ms
+      VmRSS: 44.00 KB
+      HEAP: 0.00 KB
+    Bison LR Parser:
+      Tokens: 787448
+      Time: 82.490 ms
+      VmRSS: 5984.00 KB
+      HEAP: 5436.11 KB
+
+File: input-5.easyc
+  OnlySyntaxCheck:
+    Table Driven:
+      Tokens: 984735
+      Time: 62.628 ms
+      VmRSS: 0.00 KB
+      HEAP: 125.15 KB
+    Recursive Descent:
+      Tokens: 984735
+      Time: 14.414 ms
+      VmRSS: 44.00 KB
+      HEAP: 0.00 KB
+    Bison LR Parser:
+      Tokens: 984735
+      Time: 103.396 ms
+      VmRSS: 7304.00 KB
+      HEAP: 6777.52 KB

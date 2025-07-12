@@ -1,8 +1,6 @@
 #include "syntax-error.h"
 void error_handler(char error_msg[])
 {
-    printf("fegSault ERROR\n\n\n\n\n\n!");
-    exit(1);
     printf("\033[0;31m\t\tSyntax error => %s\033[0m\n", error_msg);
 }
 

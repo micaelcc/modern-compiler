@@ -6,6 +6,8 @@
 #include "../token/token.h"
 #include "../parser/parser.h"
 #include "../config.h"
+#include "../parser/implementations/bison/lex.yy.h"
+#include "../parser/implementations/bison/parser.tab.h"
 
 void print_samples();
 void prompt(CompilerOptions options);

@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include "time.h"
 #include "malloc.h"
+#include "./implementations/bison/parser.tab.h"
 #include "./implementations/recursive.h"
 #include "./implementations/non-recursive.h"
 #include "../token/token.h"

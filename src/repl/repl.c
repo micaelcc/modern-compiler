@@ -68,6 +68,14 @@ void prompt(CompilerOptions options)
             }
         }
 
+        if (options.EXECUTE_BISON) {
+            YY_BUFFER_STATE buffer = yy_scan_string(s);
+            parse(options);
+
+            yy_delete_buffer(buffer);
+            continue;
+        }
+        
         make_tokens(s);
 
         if (options.PRINT_TOKENS)

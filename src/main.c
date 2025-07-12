@@ -34,11 +34,15 @@ void compile(char* file_path, CompilerOptions options) {
         set_table();
     }
 
-    make_tokens(file_code);
+    YY_BUFFER_STATE buffer;
+
+    if (options.EXECUTE_BISON)
+        buffer = yy_scan_string(file_code);
+    else
+        make_tokens(file_code);
     
 
     ParserBMark result = execute_parser_bmark(options);
-
     
     //printf(
     //    "Options: \n\t--only-syntax-check=%s\n\t--execute-table-driven=%s\n\t--execute-recursive-descent=%s\n"
@@ -54,7 +58,9 @@ void compile(char* file_path, CompilerOptions options) {
 
     free(file_code);
     if (options.EXECUTE_TABLE_DRIVEN) free_table();
-    free_tokens();
+    if (options.EXECUTE_BISON) yy_delete_buffer(buffer);
+    else
+        free_tokens();
     //free_parse_tree(result.tree);
     // TODO semantic/backend
 }
@@ -98,11 +104,19 @@ int main(int argc, char *argv[])
         {
             op.EXECUTE_TABLE_DRIVEN = true;
             op.EXECUTE_RECURSIVE_DESCENT = false;
+            op.EXECUTE_BISON = false;
         }
         else if (strcmp(argv[i], "--execute-recursive-descent") == 0)
         {
             op.EXECUTE_RECURSIVE_DESCENT = true;
             op.EXECUTE_TABLE_DRIVEN = false;
+            op.EXECUTE_BISON = false;
+        }
+        else if (strcmp(argv[i], "--execute-bison") == 0)
+        {
+            op.EXECUTE_BISON = true;
+            op.EXECUTE_TABLE_DRIVEN = false;
+            op.EXECUTE_RECURSIVE_DESCENT = false;
         }
         else if (strcmp(argv[i], "--print-tokens") == 0)
         {
@@ -119,7 +133,7 @@ int main(int argc, char *argv[])
             exit(1);
         }
     }
-    if (!(op.EXECUTE_RECURSIVE_DESCENT || op.EXECUTE_TABLE_DRIVEN)) {
+    if (!(op.EXECUTE_RECURSIVE_DESCENT || op.EXECUTE_TABLE_DRIVEN || op.EXECUTE_BISON)) {
         op.EXECUTE_TABLE_DRIVEN = 1;
     }
         

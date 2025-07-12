@@ -27,6 +27,14 @@ long double getMemoryConsumption()
     return (long double)currRealMemKB;
 }
 
+char* parser_name(CompilerOptions op) {
+    if (op.EXECUTE_BISON) return "Bison LR Parser";
+    if (op.EXECUTE_RECURSIVE_DESCENT) return "Recursive Descent";
+    if (op.EXECUTE_TABLE_DRIVEN) return "Table Driven";
+
+    return "undef";
+}
+
 ParserBMark execute_parser_bmark(CompilerOptions opt)
 {
     struct timespec start, end;
@@ -36,8 +44,10 @@ ParserBMark execute_parser_bmark(CompilerOptions opt)
     long double execution_time = 0;
     size_t i;
     ParseTree *parse_tree_node = NULL;
+    
+    int REPS = opt.EXECUTE_BISON ? 1 : BMARK_REPS;
 
-    for (i = 0; i < BMARK_REPS; i++)
+    for (i = 0; i < REPS; i++)
     {
         start_heap = mallinfo2();
         start_memory = getMemoryConsumption();
@@ -53,7 +63,7 @@ ParserBMark execute_parser_bmark(CompilerOptions opt)
         memory_consumption += (long double)end_memory - start_memory;
         memory_heap_consumption += (end_heap.uordblks - start_heap.uordblks) / 1024.0; //
 
-        if (i < BMARK_REPS - 1)
+        if (i < REPS - 1)
         {
             free_parse_tree(parse_tree_node);
         }
@@ -62,10 +72,10 @@ ParserBMark execute_parser_bmark(CompilerOptions opt)
     }
 
     ParserBMark result = {
-        .parser = (char *)(opt.EXECUTE_RECURSIVE_DESCENT ? "Recursive Descent" : "Table Driven"),
-        .time_in_ms = execution_time / BMARK_REPS,
-        .memory_consumption_in_KB = memory_consumption / BMARK_REPS,
-        .memory_heap_consumption_in_KB = memory_heap_consumption / BMARK_REPS,
+        .parser = parser_name(opt),
+        .time_in_ms = execution_time / REPS,
+        .memory_consumption_in_KB = memory_consumption / REPS,
+        .memory_heap_consumption_in_KB = memory_heap_consumption / REPS,
         .tokens_analyzed = get_current_token_index(),
         .tree = parse_tree_node};
 
@@ -88,7 +98,7 @@ ParseTree *parse(CompilerOptions options)
             return table_driven_parser();
         }
     }
-    else
+    else if (options.EXECUTE_RECURSIVE_DESCENT)
     {
         if (options.ONLY_SYNTAX_CHECK)
         {
@@ -98,6 +108,8 @@ ParseTree *parse(CompilerOptions options)
         {
             return handle_program();
         }
+    } else if (options.EXECUTE_BISON) {
+        yyparse();
     }
 
     return tree;
