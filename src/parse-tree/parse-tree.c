@@ -89,30 +89,7 @@ void free_parse_tree(ParseTree *root) {
 }
 
 
-/*
-void free_parse_tree(ParseTree *root) {
-    if (!root) return;
 
-    GQueue *queue = g_queue_new(); // Ou uma pilha, se preferir DFS
-    g_queue_push_head(queue, root);
-
-    while (!g_queue_is_empty(queue)) {
-        ParseTree *node = g_queue_pop_head(queue);
-
-        for (ParseTree *child = node->first_child; child != NULL; ) {
-            ParseTree *next = child->next_sibling;
-            g_queue_push_head(queue, child);
-            child = next;
-        }
-
-        free(node->_integer);
-        free(node->_float);
-        free(node->_str);
-        free(node);
-    }
-
-    g_queue_free(queue);
-}*/
 
 void print_tree_node(ParseTree *node)
 {
@@ -136,24 +113,20 @@ void print_tree_inline_rec(ParseTree *node)
     if (!node)
         return;
 
-    //printf("Node at %p, symbol: %d\n", (void*)node, node->symbol);
-    //print_tree_node(node);
+    print_tree_node(node);
 
     if (node->first_child != NULL)
     {
-        //printf("(");
+        printf("(");
         ParseTree *child = node->first_child;
         while (child != NULL)
         {
-            //printf(" Child at %p, next_sibling: %p\n", (void*)child, (void*)child->next_sibling);
             print_tree_inline_rec(child);
 
-            //if (child->next_sibling)
-            //    printf(", ");
-            //printf("%p\n", child->next_sibling);
+            if (child->next_sibling)
+                printf(", ");
             child = child->next_sibling;
         }
-        //printf(")");
     }
 }
 
@@ -207,35 +180,3 @@ void print_tree(ParseTree *root)
     int levels[1000] = {0};
     print_tree_rec(root, 0, levels, true);
 }
-
-
-/*void test_trees()
-{
-    clock_t start, end;
-    double elapsed;
-    int n = 21474;
-    // Test ParseTree
-    start = clock();
-    ParseTree *root = create_parse_tree_node(NonTermProgram, (Token){TOKEN_UNK, -1, NULL});
-    for (int i = 1; i <= n; i++)
-    {
-        ParseTree *child = create_parse_tree_node(NonTermProgram, (Token){TOKEN_UNK, -1, NULL});
-        add_child(root, child);
-    }
-    end = clock();
-    elapsed = ((double)(end - start)) / CLOCKS_PER_SEC;
-    printf("ParseTree (array children) tempo: %.6f segundos\n", elapsed);
-
-    // Test ParseTreeLinked
-    start = clock();
-    ParseTreeLinked *rootL = create_parse_tree_node_linked(NonTermProgram, (Token){TOKEN_UNK, -1, NULL});
-    for (int i = 1; i <= n; i++)
-    {
-        ParseTreeLinked *child = create_parse_tree_node_linked(NonTermProgram, (Token){TOKEN_UNK, -1, NULL});
-        add_child_linked(rootL, child);
-    }
-    end = clock();
-    elapsed = ((double)(end - start)) / CLOCKS_PER_SEC;
-    printf("ParseTreeLinked (lista encadeada) tempo: %.6f segundos\n", elapsed);
-}
-*/
